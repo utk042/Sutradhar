@@ -10,7 +10,7 @@ import logging
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
-from app.api import auth, health
+from app.api import auth, documents, health, review
 from app.config import get_settings
 
 logging.basicConfig(
@@ -43,6 +43,8 @@ def create_app() -> FastAPI:
 
     app.include_router(health.router, prefix="/api")
     app.include_router(auth.router, prefix="/api")
+    app.include_router(documents.router, prefix="/api")
+    app.include_router(review.router, prefix="/api")
     return app
 
 
