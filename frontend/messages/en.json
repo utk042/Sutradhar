@@ -5,16 +5,6 @@
     "skipToContent": "Skip to main content",
     "sampleDataNotice": "Records shown here are sample data standing in for an official records system. This is not a live government database."
   },
-  "accessibility": {
-    "groupLabel": "Text size",
-    "decrease": "Decrease text size",
-    "increase": "Increase text size",
-    "reset": "Normal text size",
-    "decreaseShort": "A−",
-    "resetShort": "A",
-    "increaseShort": "A+",
-    "currentSize": "Text size is now {percent}%"
-  },
   "language": {
     "label": "Language",
     "en": "English",
@@ -44,7 +34,6 @@
     "phaseNotice": "Document upload and verification checks arrive in the next stage of this build."
   },
   "footer": {
-    "copyright": "Government of India",
-    "builtWith": "Built with the UX4G Design System"
+    "tagline": "Sutradhar prepares the decision. A person makes it."
   }
 }

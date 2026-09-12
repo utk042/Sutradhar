@@ -25,7 +25,7 @@ with the design system rendering a real screen and a working session.
 - Full schema under Alembic, reversible
 - Seed script creating the two office users
 - English and Hindi, with every user-facing string in the locale files
-- A−/A/A+ text sizing, keyboard operation, screen-reader labelling
+- Keyboard operation and screen-reader labelling throughout
 
 **Not built yet** — document upload, the verification checks, the review screen,
 the audit hash chain, the dept head dashboard. Those are Phases 2–5.
@@ -181,7 +181,7 @@ backend/
 frontend/
   messages/      en.json · hi.json
   src/app/[locale]/    layout · login · home
-  src/components/      Ux4gRuntime · TextScaleControl · LanguageSwitcher
+  src/components/      Logo · Ux4gRuntime · LanguageSwitcher
   src/lib/api.ts
   src/styles/app.css   the only custom CSS in the project
 ```
@@ -214,6 +214,10 @@ at 1366×768:
 - Every state is labelled in words, never colour alone
 - Errors say what happened and what to do next; no status code, stack trace or
   technical vocabulary reaches an officer
+
+There is no on-screen text-resize widget. Accessibility here is structural —
+label associations, focus order, landmarks, a skip link — rather than a control
+panel bolted onto the header.
 
 **One upstream accessibility defect is fixed here.** UX4G's resting control
 border measures 1.26:1 against the input's own background — far below the 3:1
@@ -248,7 +252,26 @@ against the contract in `.claude/skills/ux4g-design/Design.md`. The default UX4G
 theme is used; there are no brand colour overrides.
 
 No second CSS framework is present, and no UX4G component is rebuilt with custom
-markup. Custom CSS is limited to `frontend/src/styles/app.css` — a page shell,
-a reading-width container, a screen-reader utility, a skip link, the text-size
-multiplier, and the contrast repoint above. Each carries an inline note saying
-which UX4G capability is missing.
+markup. Custom CSS is limited to `frontend/src/styles/app.css` — a page shell, a
+reading-width container, a screen-reader utility, a skip link, a quiet footer,
+the logo's brand colour, and the contrast repoint above. Each carries an inline
+note saying which UX4G capability is missing.
+
+Sutradhar is a product built with UX4G, not a government portal. It does not
+carry a national emblem, a ministry masthead, or a "Government of India"
+attribution, because it is a demonstration system and claiming otherwise would
+be untrue.
+
+### The logo
+
+A sūtradhāra is the one who holds the thread — the stage-manager of a Sanskrit
+play, who ties the parts into a whole without performing it. The mark draws that
+thread as an S with a bead at the tail where it is held, which is also the
+product's job: gather the separate checks, hold them, hand them to a person.
+
+It is one inline SVG using `currentColor`, so a single asset serves both themes,
+and the wordmark is live text in Noto Sans SemiBold rather than outlined paths.
+The mark is strokes on a transparent ground with no knocked-out counters,
+because UX4G applies `filter: brightness(0) invert(1)` to `.ux4g-navbar-logo` in
+dark mode — every opaque pixel becomes white, so the mark has to read as a
+silhouette.

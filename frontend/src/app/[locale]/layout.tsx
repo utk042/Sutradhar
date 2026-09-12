@@ -4,7 +4,7 @@ import {NextIntlClientProvider} from 'next-intl';
 import {getMessages, getTranslations, setRequestLocale} from 'next-intl/server';
 
 import Ux4gRuntime from '@/components/Ux4gRuntime';
-import TextScaleControl from '@/components/TextScaleControl';
+import Logo from '@/components/Logo';
 import LanguageSwitcher from '@/components/LanguageSwitcher';
 import {routing, type Locale} from '@/i18n/routing';
 
@@ -75,20 +75,20 @@ export default async function LocaleLayout({
                   container for the page gutter — otherwise the bar's contents
                   sit flush against the viewport edge. */}
               <div className="ux4g-container ux4g-navbar-wrap">
-                <span className="ux4g-heading-xs-strong">{t('name')}</span>
+                <Logo />
                 <div className="ux4g-navbar-right ux4g-d-flex ux4g-ai-center ux4g-gap-s">
                   <LanguageSwitcher />
-                  <TextScaleControl />
                 </div>
               </div>
             </nav>
 
             <main id="main">{children}</main>
 
-            <footer className="ux4g-footer-wrapper ux4g-footer-primary">
-              <div className="ux4g-container ux4g-footer-row">
-                <p className="ux4g-body-s-default">{tf('copyright')}</p>
-                <p className="ux4g-body-s-default">{tf('builtWith')}</p>
+            <footer className="sutradhar-footer">
+              <div className="ux4g-container">
+                <p className="ux4g-body-s-default ux4g-text-neutral-tertiary">
+                  {tf('tagline')}
+                </p>
               </div>
             </footer>
           </div>

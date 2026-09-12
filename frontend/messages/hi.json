@@ -5,16 +5,6 @@
     "skipToContent": "मुख्य सामग्री पर जाएँ",
     "sampleDataNotice": "Records shown here are sample data standing in for an official records system. This is not a live government database."
   },
-  "accessibility": {
-    "groupLabel": "अक्षर का आकार",
-    "decrease": "अक्षर का आकार छोटा करें",
-    "increase": "अक्षर का आकार बड़ा करें",
-    "reset": "सामान्य अक्षर आकार",
-    "decreaseShort": "A−",
-    "resetShort": "A",
-    "increaseShort": "A+",
-    "currentSize": "Text size is now {percent}%"
-  },
   "language": {
     "label": "भाषा",
     "en": "English",
@@ -44,7 +34,6 @@
     "phaseNotice": "Document upload and verification checks arrive in the next stage of this build."
   },
   "footer": {
-    "copyright": "भारत सरकार",
-    "builtWith": "Built with the UX4G Design System"
+    "tagline": "सूत्रधार निर्णय तैयार करता है। निर्णय व्यक्ति लेता है।"
   }
 }

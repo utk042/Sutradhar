@@ -3,7 +3,7 @@
  *
  * Drives a real browser through the Phase 1 journey: validation, a failed
  * sign-in, a keyboard-only successful sign-in, the session cookie being
- * invisible to JavaScript, text sizing, Hindi, and sign-out.
+ * invisible to JavaScript, Hindi, and sign-out.
  *
  * Both servers must already be running (see README).
  *   npm run smoke
@@ -78,22 +78,13 @@ const realCookies = (await ctx.cookies()).map(c=>`${c.name}(httpOnly=${c.httpOnl
 console.log('document.cookie sees:', JSON.stringify(jsCookies));
 console.log('actual cookies:', realCookies.join(', '));
 
-// ---------- 5. text scale control actually scales the UI ----------
-const before = await p.evaluate(()=>getComputedStyle(document.documentElement).fontSize);
-await p.getByRole('button',{name:'Increase text size'}).click();
-await p.getByRole('button',{name:'Increase text size'}).click();
-const after = await p.evaluate(()=>getComputedStyle(document.documentElement).fontSize);
-const btnH = await p.evaluate(()=>{const b=document.querySelector('.ux4g-btn');return getComputedStyle(b).minHeight;});
-console.log(`\nA+ : root font ${before} -> ${after}; a button's min-height is now ${btnH} (rem-based, so controls grow too)`);
-await p.screenshot({path:'/tmp/shots/04-scaled.png', fullPage:true});
-
-// ---------- 6. Hindi ----------
+// ---------- 5. Hindi ----------
 await p.getByRole('button',{name:'हिन्दी'}).click();
 await p.waitForURL(/\/hi/,{timeout:8000});
 console.log('switched to Hindi ->', new URL(p.url()).pathname, '| heading:', (await p.locator('h1').textContent()).trim());
 await p.screenshot({path:'/tmp/shots/05-hindi.png', fullPage:true});
 
-// ---------- 7. sign out ----------
+// ---------- 6. sign out ----------
 await p.getByRole('button',{name:/साइन आउट|Sign out/}).click();
 await p.waitForURL(/login/,{timeout:8000});
 console.log('sign out -> ', new URL(p.url()).pathname);

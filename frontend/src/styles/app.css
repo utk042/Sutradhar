@@ -52,32 +52,7 @@
 }
 
 /* ---------------------------------------------------------------------------
-   2. Text size control (A− / A / A+).
-
-   GAP: ux4g-web-components@2.1.0 ships no Accessibility Bar. Verified absent —
-   the compiled stylesheet contains no accessibility, contrast, zoom or
-   font-size classes, and the only "accessibility" strings in the bundled
-   runtime are code comments about keyboard handling. Design.md §12 marks the
-   component available for web, which is a contract error against the shipped
-   artifact.
-
-   2.1.0 converted all component and utility values from px to rem, so scaling
-   the root font size scales the whole interface, not only loose text. The
-   multiplier is all this needs to be.
-
-   The control itself is built from ux4g-btn classes and carries no styling of
-   its own.
-   --------------------------------------------------------------------------- */
-:root {
-  --sutradhar-text-scale: 1;
-}
-
-html[data-sutradhar-text-scale] {
-  font-size: calc(100% * var(--sutradhar-text-scale));
-}
-
-/* ---------------------------------------------------------------------------
-   3. Page shell layout.
+   2. Page shell layout.
 
    GAP: UX4G ships Navbar and Footer but no page-shell primitive that pins a
    footer to the bottom of a short page. Layout only — no colour, no type.
@@ -132,4 +107,31 @@ html[data-sutradhar-text-scale] {
 
 .sutradhar-skip-link:focus {
   transform: translateY(0);
+}
+
+/* A quiet footer.
+
+   GAP: UX4G ships ux4g-footer-primary and ux4g-footer-dark, both full-bleed
+   colour bands sized for a portal with several columns of links. This product
+   has one line of text, so the band reads as decoration. Border and spacing
+   come from UX4G tokens; no colour is set here, so the text keeps whatever the
+   ux4g-text-* utility on it resolves to in each theme. */
+.sutradhar-footer {
+  border-top: var(--ux4g-border-width-sm) solid var(--ux4g-border-color-neutral-subtle);
+  padding-block: var(--ux4g-padding-l);
+  margin-top: var(--ux4g-section-s);
+}
+
+/* The logo's brand colour.
+
+   GAP: the package README documents a `ux4g-text-brand-primary` utility, but no
+   such class exists in the shipped CSS — only `.ux4g-text-link` consumes
+   --ux4g-text-brand-primary-default, and it also sets text-decoration and
+   alignment we do not want on an SVG. So the token is applied directly.
+
+   The token is tier-2 semantic, measured in Design.md §7 at 8.33:1 light and
+   6.87:1 dark. In dark, UX4G's own .ux4g-navbar-logo filter overrides it to
+   white regardless; this governs the light theme. */
+.sutradhar-logo {
+  color: var(--ux4g-text-brand-primary-default);
 }
