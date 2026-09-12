@@ -28,7 +28,7 @@ This constrains every UI decision:
 - No jargon in the interface. Never show the officer the words "agent", "LLM", "model", "token", "prompt", "embedding" or "pipeline". Say "checks", "verification", "system".
 - Every state labelled in words, never by colour or icon alone.
 - Nothing more than two clicks from the home screen.
-- Readable at arm's length by default. Respect the UX4G A−/A/A+ accessibility controls.
+- Readable at arm's length by default.
 - Errors say what happened and what to do next, in plain language. Never show a stack trace, an HTTP status code, or a raw exception to the officer.
 - Full keyboard operation and full screen reader labelling. This is a government service; GIGW 3.0 / WCAG compliance is not optional.
 

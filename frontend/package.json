@@ -1,0 +1,29 @@
+{
+  "name": "sutradhar-frontend",
+  "version": "0.1.0",
+  "private": true,
+  "scripts": {
+    "dev": "next dev",
+    "build": "next build",
+    "start": "next start",
+    "lint": "eslint .",
+    "typecheck": "tsc --noEmit",
+    "smoke": "node smoke.mjs"
+  },
+  "dependencies": {
+    "next": "15.5.4",
+    "next-intl": "3.26.5",
+    "react": "19.1.1",
+    "react-dom": "19.1.1",
+    "ux4g-web-components": "2.1.0"
+  },
+  "devDependencies": {
+    "@types/node": "22.10.5",
+    "@types/react": "19.0.7",
+    "@types/react-dom": "19.0.3",
+    "eslint": "9.18.0",
+    "eslint-config-next": "15.5.4",
+    "typescript": "5.7.3",
+    "playwright": "1.63.0"
+  }
+}

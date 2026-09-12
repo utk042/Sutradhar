@@ -1,0 +1,58 @@
+# Which checks run, in what order, and what they are told.
+#
+# Adding a check, changing its wording, or adapting the system to a different
+# kind of document is an edit to this file, not to Python. The graph in
+# app/agents/graph.py reads this and builds itself from it.
+#
+# `label_key` is a locale key, never a sentence: the officer's screen renders
+# whatever their language file has under that key, so nothing user-facing is
+# decided here.
+
+version: 1
+
+checks:
+  # All three share a `stage`, so the graph gathers them concurrently.
+  - name: verification
+    enabled: true
+    stage: specialist
+    reads: registry_records
+    label_key: checks.verification
+    prompt: |
+      Compare the document's fields against the official record supplied below.
+
+      For each field, decide one of:
+        verified      - the values agree, allowing for formatting differences
+        mismatch      - the values genuinely disagree
+        unverifiable  - you cannot tell, including when the difference may be a
+                        transliteration or spelling variant of the same name
+
+      Choosing "unverifiable" is correct and expected when you are unsure. Never
+      choose "verified" or "mismatch" to appear decisive.
+
+  - name: retrieval
+    enabled: true
+    stage: specialist
+    reads: rules
+    label_key: checks.retrieval
+    prompt: |
+      Identify which of the supplied rules apply to this document type.
+
+  - name: compliance
+    enabled: true
+    stage: specialist
+    reads: rules
+    label_key: checks.compliance
+    prompt: |
+      Check the document's fields against the eligibility thresholds, expiry
+      dates and required attachments in the supplied rules.
+
+# How a field difference is graded when a check cannot resolve it itself.
+severity:
+  # A name that differs only by transliteration is a judgement call for the
+  # officer, not a block.
+  full_name_unverifiable: warning
+  # A date of birth that genuinely disagrees with the register stops the file.
+  date_of_birth_mismatch: blocking
+  default_mismatch: warning
+  default_unverifiable: warning
+  injection_detected: blocking

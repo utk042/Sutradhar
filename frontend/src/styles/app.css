@@ -1,0 +1,300 @@
+/* ===========================================================================
+   Sutradhar application CSS.
+
+   Everything UX4G provides is used as a UX4G class or token. This file holds
+   only the two things the design system does not ship, plus one approved token
+   repoint. Each is justified inline, as the contract requires.
+
+   No colour, spacing, radius, type or shadow value is written literally here —
+   every value is a UX4G custom property.
+   =========================================================================== */
+
+/* ---------------------------------------------------------------------------
+   1. Approved token repoint — accessibility fix, not a theme change.
+
+   Design.md §9 records the resting control boundary failing non-text contrast
+   and names the fix: repoint it at a darker step rather than introduce a new
+   colour. Measured in 2.1.0, light theme, against the input's own #ffffff
+   background:
+
+     --ux4g-border-color-neutral-subtle   #e5e5e5   1.26:1   FAIL  (the default)
+     --ux4g-border-color-neutral-default  #d9d9d9   1.41:1   FAIL
+     --ux4g-border-color-neutral-strong   #737373   4.74:1   PASS
+
+   WCAG 1.4.11 requires 3:1 for a control boundary when it is the only thing
+   indicating the control's extent. This is the resting border of every input
+   and textarea in the service; at 1.26:1 a low-vision officer cannot see where
+   the field is.
+
+   Both values below are tier-2 semantic tokens — no tier-1 primitive is
+   referenced, per Design.md §13.
+
+   Approved by the project owner before implementation.
+   --------------------------------------------------------------------------- */
+
+/* The documented control token. Repointed for whatever consumes it. */
+:root {
+  --ux4g-control-border-default: var(--ux4g-border-color-neutral-strong) !important;
+}
+
+/* The token the Input and Textarea components actually consume in 2.1.0 is
+   --ux4g-border-color-neutral-subtle, not --ux4g-control-border-default. It is
+   repointed here on the control box itself rather than at :root, because the
+   same token is the correct decorative value for table row dividers and rules,
+   where Design.md §9 explicitly accepts sub-3:1. Scoping keeps the fix to
+   control boundaries and leaves decoration alone.
+
+   This sets a token, not component styling, and the component's own
+   hover/focus/error rules continue to win — nothing here is !important. */
+.ux4g-input,
+.ux4g-textarea {
+  --ux4g-border-color-neutral-subtle: var(--ux4g-border-color-neutral-strong);
+}
+
+/* ---------------------------------------------------------------------------
+   2. Page shell layout.
+
+   GAP: UX4G ships Navbar and Footer but no page-shell primitive that pins a
+   footer to the bottom of a short page. Layout only — no colour, no type.
+   --------------------------------------------------------------------------- */
+.sutradhar-shell {
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
+}
+
+.sutradhar-shell > main {
+  flex: 1 0 auto;
+}
+
+/* Centred single-column reading surface for forms.
+
+   GAP: ux4g-container is the right wrapper for the page shell, but its desktop
+   ceiling is 71.25rem (1140px) — far too wide a measure for a form. UX4G ships
+   no narrower reading container (ux4g-container-sm caps at 540px, too narrow for
+   a two-column field row later). 768px matches the Mobile-mode content ceiling
+   in Design.md §8 and keeps the line length readable at arm's length. */
+.sutradhar-narrow {
+  width: 100%;
+  max-width: 768px;
+  margin-inline: auto;
+}
+
+/* Visible only to screen readers. UX4G has no equivalent utility; this is the
+   standard clip pattern and uses no design tokens. */
+.sutradhar-sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+/* Skip link: hidden until focused, then rendered in normal flow. Colour and
+   spacing come from UX4G tokens. */
+.sutradhar-skip-link {
+  position: absolute;
+  left: var(--ux4g-padding-s);
+  top: var(--ux4g-padding-s);
+  z-index: 100;
+  transform: translateY(-200%);
+  transition: transform 120ms ease-out;
+}
+
+.sutradhar-skip-link:focus {
+  transform: translateY(0);
+}
+
+/* A quiet footer.
+
+   GAP: UX4G ships ux4g-footer-primary and ux4g-footer-dark, both full-bleed
+   colour bands sized for a portal with several columns of links. This product
+   has one line of text, so the band reads as decoration. Border and spacing
+   come from UX4G tokens; no colour is set here, so the text keeps whatever the
+   ux4g-text-* utility on it resolves to in each theme. */
+.sutradhar-footer {
+  border-top: var(--ux4g-border-width-sm) solid var(--ux4g-border-color-neutral-subtle);
+  padding-block: var(--ux4g-padding-l);
+  margin-top: var(--ux4g-section-s);
+}
+
+/* The logo's brand colour.
+
+   GAP: the package README documents a `ux4g-text-brand-primary` utility, but no
+   such class exists in the shipped CSS — only `.ux4g-text-link` consumes
+   --ux4g-text-brand-primary-default, and it also sets text-decoration and
+   alignment we do not want on an SVG. So the token is applied directly.
+
+   The token is tier-2 semantic, measured in Design.md §7 at 8.33:1 light and
+   6.87:1 dark. In dark, UX4G's own .ux4g-navbar-logo filter overrides it to
+   white regardless; this governs the light theme. */
+.sutradhar-logo {
+  color: var(--ux4g-text-brand-primary-default);
+}
+
+/* A wider page than the sign-in form. The review screen carries two columns and
+   a table; the 768px reading measure would squeeze both. Uses the same
+   max-width approach and UX4G tokens for its gutter. */
+.sutradhar-page {
+  width: 100%;
+  max-width: 1140px;
+  margin-inline: auto;
+}
+
+/* The review screen's two panes.
+
+   GAP: UX4G ships a 12-column grid (ux4g-col-*), but it has no split-pane
+   primitive that keeps the document beside the findings and collapses cleanly
+   to one column. At 1366x768 — the desktop this is built for — the document
+   needs the wider share. Layout only; every gap is a UX4G token. */
+.sutradhar-review-split {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: var(--ux4g-section-xs);
+}
+
+@media (min-width: 1024px) {
+  .sutradhar-review-split {
+    grid-template-columns: 3fr 4fr;
+    gap: var(--ux4g-section-xs);
+    align-items: start;
+  }
+}
+
+/* Rows of tags and buttons wrap rather than overflow at narrow widths. UX4G's
+   flex utilities do not include a wrap helper. */
+.sutradhar-wrap {
+  flex-wrap: wrap;
+}
+
+/* Tables are the one thing allowed to scroll sideways, in their own container,
+   so the page itself never does. */
+.sutradhar-table-scroll {
+  overflow-x: auto;
+  max-width: 100%;
+}
+
+/* The findings list carries its own cards; the default list bullets and indent
+   would fight them. */
+.sutradhar-list-reset {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+/* GAP: UX4G ships an Upload component (ux4g-upload) built around drag-and-drop
+   with its own button and file-list markup. This screen needs a single native
+   file input so that the control an officer tabs to is the one that opens the
+   file browser, with no second interactive element beside it. Only spacing and
+   the focus target are set; colour and radius come from tokens. */
+.sutradhar-file-input {
+  display: block;
+  width: 100%;
+  max-width: 32rem;
+  padding: var(--ux4g-padding-s);
+  border: var(--ux4g-border-width-sm) solid var(--ux4g-border-color-neutral-strong);
+  border-radius: var(--ux4g-radius-md);
+  background-color: var(--ux4g-bg-neutral-elevated);
+  color: var(--ux4g-text-neutral-primary);
+  font: inherit;
+}
+
+.sutradhar-file-input:focus-visible {
+  outline: var(--ux4g-border-width-md) solid var(--ux4g-focus-outline, var(--ux4g-text-brand-primary-default));
+  outline-offset: 2px;
+}
+
+/* Make the spinner visible.
+
+   GAP: `.ux4g-spinner` sets `border: <width> solid transparent` and nothing in
+   the shipped CSS ever gives that border a colour — grep-verified: no rule in
+   2.1.0 sets a spinner border-color, and the sixteen `--Spinner-{variant}-Color`
+   properties Design.md §2 records are absent from this release (0 defined, 0
+   referenced). The README documents nine colour variants — primary, inverse and
+   danger by full, split and partial — none of which exist as classes. So the
+   component animates, at the right size, completely invisibly.
+
+   Three sides in the brand colour and one transparent is the usual way to make
+   rotation legible. Both values are UX4G tokens.
+
+   The spinner is reinforcement, never the message: each check's state is also
+   written as a word beside it. */
+.sutradhar-spinner {
+  border-color: var(--ux4g-border-color-primary-default);
+  border-top-color: transparent;
+}
+
+/* The annotated document.
+
+   GAP: UX4G has no component for marking values inside a block of text. The
+   nearest things are Tag and Badge, which are standalone labels, not inline
+   annotations over content. Everything below is layout and state; colour,
+   spacing, radius and type all come from UX4G tokens.
+
+   Status is carried by the label text inside each mark, never by colour: the
+   underline thickness and the words differ per status, so the marks stay
+   distinguishable in greyscale and to a screen reader. */
+.sutradhar-document-text {
+  margin: 0;
+  white-space: pre-wrap;
+  word-break: break-word;
+  font-family: inherit;
+  font-size: var(--ux4g-fs-14);
+  line-height: var(--ux4g-lh-24);
+  color: var(--ux4g-text-neutral-primary);
+}
+
+.sutradhar-annotation {
+  display: inline;
+  padding: var(--ux4g-padding-none) var(--ux4g-padding-3xs);
+  border: 0;
+  border-radius: var(--ux4g-radius-xs);
+  background: none;
+  font: inherit;
+  color: inherit;
+  cursor: pointer;
+  text-decoration: underline;
+  text-decoration-thickness: var(--ux4g-border-width-md);
+  text-underline-offset: 3px;
+}
+
+.sutradhar-annotation:focus-visible {
+  outline: var(--ux4g-border-width-md) solid var(--ux4g-text-brand-primary-default);
+  outline-offset: 2px;
+}
+
+.sutradhar-annotation[data-status='verified'] {
+  background-color: var(--ux4g-bg-success-subtle);
+  text-decoration-color: var(--ux4g-border-color-success-strong);
+}
+
+.sutradhar-annotation[data-status='mismatch'] {
+  background-color: var(--ux4g-bg-error-subtle);
+  text-decoration-color: var(--ux4g-border-color-error-strong);
+  text-decoration-style: double;
+}
+
+.sutradhar-annotation[data-status='unverifiable'] {
+  background-color: var(--ux4g-bg-warning-subtle);
+  text-decoration-color: var(--ux4g-border-color-warning-strong);
+  text-decoration-style: wavy;
+}
+
+.sutradhar-annotation[aria-pressed='true'] {
+  outline: var(--ux4g-border-width-md) solid var(--ux4g-text-brand-primary-default);
+  outline-offset: 2px;
+}
+
+/* The status word beside each marked value. Small, but present: the mark must
+   not depend on its colour to be understood. */
+.sutradhar-annotation-label {
+  margin-inline-start: var(--ux4g-margin-xs);
+  font-size: var(--ux4g-fs-11);
+  font-weight: var(--ux4g-font-weight-semibold);
+  text-decoration: none;
+  white-space: nowrap;
+}

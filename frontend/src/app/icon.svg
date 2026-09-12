@@ -1,0 +1,8 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32" role="img" aria-label="Sutradhar">
+  <rect width="32" height="32" rx="7" fill="#4A2BC2"/>
+  <g transform="translate(16 16) scale(0.74) translate(-16 -16)">
+    <path d="M23.8 10.4C22.7 7.4 19.6 5.6 16 5.6c-3.9 0-6.8 2-6.8 5 0 6 13.7 3.4 13.7 10.6 0 3.5-3.3 5.6-7.3 5.6-3.2 0-6-1.2-7.2-3.4"
+          stroke="#FFFFFF" stroke-width="3.6" stroke-linecap="round" fill="none"/>
+    <circle cx="8.6" cy="23.6" r="3.3" fill="#FFFFFF"/>
+  </g>
+</svg>

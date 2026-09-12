@@ -1,0 +1,166 @@
+{
+  "app": {
+    "name": "Sutradhar",
+    "tagline": "दस्तावेज़ सत्यापन डेस्क",
+    "skipToContent": "मुख्य सामग्री पर जाएँ",
+    "sampleDataNotice": "यहाँ दिखाए गए अभिलेख वास्तविक अभिलेख प्रणाली के स्थान पर नमूना डेटा हैं। यह कोई सजीव सरकारी डेटाबेस नहीं है।"
+  },
+  "language": {
+    "label": "भाषा",
+    "en": "English",
+    "hi": "हिन्दी"
+  },
+  "login": {
+    "title": "साइन इन करें",
+    "intro": "Sign in with the mobile number registered for your office.",
+    "mobileLabel": "मोबाइल नंबर",
+    "mobileHelp": "10 अंक, बिना स्पेस",
+    "passwordLabel": "पासवर्ड",
+    "submit": "साइन इन करें",
+    "submitting": "साइन इन हो रहा है…",
+    "errors": {
+      "mobileRequired": "अपना मोबाइल नंबर दर्ज करें।",
+      "mobileFormat": "Enter the 10-digit mobile number registered for your office.",
+      "passwordRequired": "अपना पासवर्ड दर्ज करें।",
+      "invalid_credentials": "That mobile number and password do not match. Check both and try again.",
+      "network": "Could not reach the system. Check your connection and try again.",
+      "unexpected": "Something went wrong at our end. Please try again in a moment."
+    }
+  },
+  "home": {
+    "title": "आपका डेस्क",
+    "signedInAs": "{name} के रूप में साइन इन",
+    "signOut": "साइन आउट",
+    "upload": "दस्तावेज़ अपलोड करें",
+    "uploading": "अपलोड हो रहा है…",
+    "chooseFile": "अपलोड करने के लिए दस्तावेज़ चुनें",
+    "fileHint": "PDF, PNG या JPEG, अधिकतम 10 MB",
+    "pendingTitle": "आपकी प्रतीक्षा में दस्तावेज़",
+    "emptyTitle": "कुछ भी प्रतीक्षारत नहीं",
+    "emptyBody": "दस्तावेज़ अपलोड करने पर, जाँच पूरी होते ही वह यहाँ दिखाई देगा।",
+    "colReference": "संदर्भ",
+    "colDocument": "दस्तावेज़",
+    "colType": "प्रकार",
+    "colStatus": "स्थिति",
+    "colUploaded": "अपलोड किया गया",
+    "open": "खोलें",
+    "review": "समीक्षा करें"
+  },
+  "footer": {
+    "tagline": "सूत्रधार निर्णय तैयार करता है। निर्णय व्यक्ति लेता है।"
+  },
+  "status": {
+    "uploaded": "जाँच की प्रतीक्षा में",
+    "processing": "जाँच चल रही है",
+    "pending_review": "आपके निर्णय की प्रतीक्षा में",
+    "approved": "स्वीकृत",
+    "rejected": "अस्वीकृत",
+    "failed": "जाँच नहीं हो सकी"
+  },
+  "docType": {
+    "birth_certificate": "जन्म प्रमाण पत्र",
+    "income_certificate": "आय प्रमाण पत्र",
+    "scheme_application": "योजना आवेदन",
+    "unknown": "पहचाना नहीं गया"
+  },
+  "review": {
+    "title": "दस्तावेज़ {reference} की समीक्षा",
+    "documentPane": "दस्तावेज़",
+    "checksPane": "जाँच",
+    "running": "अभिलेखों से मिलान किया जा रहा है…",
+    "runningHint": "इसमें आमतौर पर कुछ सेकंड लगते हैं। पृष्ठ स्वयं अद्यतन हो जाएगा।",
+    "complete": "{count, plural, =0 {जाँच पूरी। कुछ भी चिह्नित नहीं।} one {जाँच पूरी। एक बात देखने योग्य है।} other {जाँच पूरी। # बातें देखने योग्य हैं।}}",
+    "findingsTitle": "जाँच में क्या मिला",
+    "evidenceTitle": "प्रमाण",
+    "onDocument": "दस्तावेज़ पर",
+    "inRecords": "अभिलेखों में",
+    "source": "स्रोत",
+    "notRecorded": "दर्ज नहीं",
+    "viewEvidence": "प्रमाण देखें",
+    "closeEvidence": "बंद करें",
+    "decisionTitle": "आपका निर्णय",
+    "decisionHint": "जब तक आप नहीं चुनते, कुछ तय नहीं होता। ऊपर की जाँच केवल फ़ाइल तैयार करती है।",
+    "approve": "स्वीकृत करें",
+    "reject": "अस्वीकृत करें",
+    "approving": "Approving…",
+    "rejecting": "Rejecting…",
+    "waitForChecks": "जाँच पूरी होने के बाद आप निर्णय ले सकते हैं।",
+    "reasonLabel": "आप इस दस्तावेज़ को क्यों अस्वीकृत कर रहे हैं?",
+    "reasonHint": "यह आपके निर्णय के साथ दर्ज किया जाता है।",
+    "overrideLabel": "स्वीकृत करने से पहले यहाँ आपकी टिप्पणी आवश्यक है",
+    "overrideHint": "एक जाँच में समस्या चिह्नित हुई है। बताइए कि आप फिर भी क्यों स्वीकृत कर रहे हैं।",
+    "cancel": "रद्द करें",
+    "technicalDetails": "तकनीकी विवरण",
+    "checkName": "Check",
+    "checkDuration": "Time taken",
+    "checkStatus": "Result",
+    "milliseconds": "{ms} ms",
+    "readDocument": "अपलोड की गई फ़ाइल खोलें",
+    "extractedTitle": "दस्तावेज़ से क्या पढ़ा गया",
+    "errors": {
+      "reason_required": "Please give a reason before rejecting.",
+      "override_note_required": "Please add a note explaining why you are approving this.",
+      "document_not_awaiting_review": "This document has already been decided.",
+      "document_not_found": "That document could not be found.",
+      "network": "Could not reach the system. Check your connection and try again.",
+      "unexpected": "Something went wrong at our end. Please try again in a moment."
+    },
+    "reading": "दस्तावेज़ पढ़ा जा रहा है…",
+    "checkRunning": "चल रही है",
+    "checkDone": "पूर्ण",
+    "checkFailed": "नहीं चल सकी",
+    "progressTitle": "क्या हो रहा है",
+    "connectionLost": "सजीव अद्यतन रुक गया। पृष्ठ फिर भी परिणाम दिखाएगा।",
+    "annotationHint": "जाँच में देखे गए मान नीचे दस्तावेज़ में चिह्नित हैं। प्रमाण देखने के लिए किसी एक को चुनें।",
+    "documentText": "दस्तावेज़, जाँच सहित चिह्नित",
+    "fromCheck": "स्रोत: {check}"
+  },
+  "finding": {
+    "verified": "सत्यापित",
+    "mismatch": "मेल नहीं खाता",
+    "unverifiable": "आपकी जाँच आवश्यक",
+    "severityBlocking": "हल करना आवश्यक",
+    "severityWarning": "जाँचने योग्य",
+    "severityInfo": "जानकारी हेतु",
+    "fields": {
+      "full_name": "नाम",
+      "date_of_birth": "जन्म तिथि",
+      "father_name": "पिता का नाम",
+      "address": "पता",
+      "annual_income": "वार्षिक आय",
+      "issued_on": "जारी करने की तिथि",
+      "issuing_authority": "जारीकर्ता प्राधिकारी",
+      "record": "मिलान अभिलेख",
+      "document_content": "दस्तावेज़ की सामग्री",
+      "record_ref": "प्रमाण पत्र संख्या",
+      "rules": "लागू नियम"
+    }
+  },
+  "decision": {
+    "titleApproved": "दस्तावेज़ स्वीकृत",
+    "titleRejected": "दस्तावेज़ अस्वीकृत",
+    "summary": "{reference} को {officer} द्वारा {when} {decision} किया गया।",
+    "approvedWord": "स्वीकृत",
+    "rejectedWord": "अस्वीकृत",
+    "reasonGiven": "दिया गया कारण",
+    "noteGiven": "आपकी टिप्पणी",
+    "auditTitle": "यह निर्णय अंकेक्षण लॉग में दर्ज कर लिया गया है।",
+    "backToDesk": "अपने डेस्क पर लौटें"
+  },
+  "upload": {
+    "errors": {
+      "upload_empty": "That file is empty. Choose another one.",
+      "upload_too_large": "That file is larger than 10 MB. Choose a smaller one.",
+      "upload_wrong_type": "Only PDF, PNG and JPEG files can be uploaded.",
+      "upload_type_mismatch": "That file does not match its name. Check the file and try again.",
+      "upload_unreadable": "That file could not be read. Choose another one.",
+      "network": "Could not reach the system. Check your connection and try again.",
+      "unexpected": "Something went wrong at our end. Please try again in a moment."
+    }
+  },
+  "checks": {
+    "verification": "अभिलेखों से मिलान",
+    "retrieval": "लागू नियम ढूँढना",
+    "compliance": "पात्रता और वैधता की जाँच"
+  }
+}
