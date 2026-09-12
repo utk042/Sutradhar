@@ -89,3 +89,54 @@ class SeededRecordsProvider(RecordsProvider):
                 return self._flatten(row)
 
         return None
+
+
+@dataclass(frozen=True)
+class ApplicableRule:
+    """One rule the checks evaluate, flattened away from the ORM row."""
+
+    rule_code: str
+    rule_type: str
+    field_name: str | None
+    operator: str | None
+    threshold_value: str | None
+    severity: str
+    description_en: str
+
+    @property
+    def citation(self) -> str:
+        return f"rules #{self.rule_code}"
+
+
+class RulesProvider(ABC):
+    @abstractmethod
+    def for_document_type(self, doc_type: str) -> list[ApplicableRule]:
+        """The active rules that apply to this kind of document."""
+
+
+class SeededRulesProvider(RulesProvider):
+    """Reads the seeded `rules` table. Holds a read-only session."""
+
+    def __init__(self, session: Session) -> None:
+        self._session = session
+
+    def for_document_type(self, doc_type: str) -> list[ApplicableRule]:
+        from app.models.reference import Rule
+
+        rows = self._session.scalars(
+            select(Rule)
+            .where(Rule.doc_type == doc_type, Rule.active.is_(True))
+            .order_by(Rule.rule_code)
+        ).all()
+        return [
+            ApplicableRule(
+                rule_code=r.rule_code,
+                rule_type=r.rule_type,
+                field_name=r.field_name,
+                operator=r.operator,
+                threshold_value=r.threshold_value,
+                severity=r.severity,
+                description_en=r.description_en,
+            )
+            for r in rows
+        ]

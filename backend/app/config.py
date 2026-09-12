@@ -50,6 +50,19 @@ class Settings(BaseSettings):
 
     environment: Literal["development", "production"] = "development"
 
+    # --- Demonstration aid ------------------------------------------------
+    #: Artificial delay added to each check, in milliseconds. Zero in normal
+    #: operation and in production.
+    #:
+    #: With no model provider configured the checks are pure local work and
+    #: finish in single-digit milliseconds — faster than the screen can render,
+    #: so the live progress view has nothing to show and the concurrency cannot
+    #: be seen. Setting this makes both visible without pretending the work is
+    #: slower than it is: the delay is applied concurrently, so three checks at
+    #: 800 ms still finish in about 800 ms, not 2.4 seconds, which is the point
+    #: being demonstrated.
+    check_delay_ms: int = 0
+
     @field_validator("db_path", "upload_dir")
     @classmethod
     def _resolve_against_repo_root(cls, v: Path) -> Path:

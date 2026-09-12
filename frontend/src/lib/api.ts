@@ -120,6 +120,7 @@ export interface DocumentDetail extends DocumentSummary {
   findings: Finding[];
   checks: CheckRun[];
   extracted: Record<string, string>;
+  extracted_text: string | null;
   has_blocking: boolean;
   reviewed_at: string | null;
   decision_reason: string | null;

@@ -50,6 +50,11 @@ class Document(Base):
 
     status: Mapped[str] = mapped_column(DocumentStatusEnum, default="uploaded", index=True)
 
+    #: The text read off the document, kept so the review screen can show the
+    #: document with each checked value marked in place. No new exposure: this is
+    #: the same content as the stored file, which is already held.
+    extracted_text: Mapped[str | None] = mapped_column(Text, default=None)
+
     uploaded_by: Mapped[int] = mapped_column(ForeignKey("users.id"))
     uploaded_at: Mapped[datetime] = mapped_column(UTCDateTime, default=utcnow)
 

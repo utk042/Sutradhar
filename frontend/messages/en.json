@@ -104,7 +104,16 @@
       "document_not_found": "That document could not be found.",
       "network": "Could not reach the system. Check your connection and try again.",
       "unexpected": "Something went wrong at our end. Please try again in a moment."
-    }
+    },
+    "reading": "Reading the document…",
+    "checkRunning": "Running",
+    "checkDone": "Done",
+    "checkFailed": "Could not run",
+    "progressTitle": "What is happening",
+    "connectionLost": "The live update stopped. The page will still show the result.",
+    "annotationHint": "Values the checks looked at are marked in the document below. Select one to see the evidence behind it.",
+    "documentText": "The document, with the checks marked",
+    "fromCheck": "From: {check}"
   },
   "finding": {
     "verified": "Verified",
@@ -123,7 +132,8 @@
       "issuing_authority": "Issuing authority",
       "record": "Matching record",
       "document_content": "Document contents",
-      "record_ref": "Certificate number"
+      "record_ref": "Certificate number",
+      "rules": "Rules applied"
     }
   },
   "decision": {
@@ -147,5 +157,10 @@
       "network": "Could not reach the system. Check your connection and try again.",
       "unexpected": "Something went wrong at our end. Please try again in a moment."
     }
+  },
+  "checks": {
+    "verification": "Matching against records",
+    "retrieval": "Finding the rules that apply",
+    "compliance": "Checking eligibility and validity"
   }
 }

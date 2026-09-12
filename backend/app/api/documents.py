@@ -85,8 +85,14 @@ def list_documents(
     user: CurrentUserDep,
     session: Annotated[Session, Depends(get_app_session)],
 ) -> list[DocumentSummary]:
+    # Ordered by id as well as time: several documents can share an upload
+    # timestamp to the second, and ordering by the timestamp alone leaves their
+    # relative order to the database. The officer's newest file must be at the
+    # top every time, not usually.
     rows = session.scalars(
-        select(Document).order_by(Document.uploaded_at.desc()).limit(100)
+        select(Document)
+        .order_by(Document.uploaded_at.desc(), Document.id.desc())
+        .limit(100)
     ).all()
     return [DocumentSummary.model_validate(r) for r in rows]
 
@@ -111,6 +117,7 @@ def _load_detail(session: Session, document_id: int) -> DocumentDetail:
         findings=[FindingOut.model_validate(f) for f in findings],
         checks=[CheckRunOut.model_validate(c) for c in checks],
         extracted={r.field_name: r.field_value or "" for r in extracted_rows},
+        extracted_text=document.extracted_text,
         has_blocking=any(f.severity == "blocking" for f in findings),
         reviewed_at=document.reviewed_at,
         decision_reason=document.decision_reason,

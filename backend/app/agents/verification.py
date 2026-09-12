@@ -57,6 +57,7 @@ async def run_verification(
     extracted: dict[str, str],
     raw_text: str,
     records: RecordsProvider,
+    **_: object,
 ) -> CheckResult:
     started_at = utcnow()
     started = time.perf_counter()

@@ -104,7 +104,16 @@
       "document_not_found": "That document could not be found.",
       "network": "Could not reach the system. Check your connection and try again.",
       "unexpected": "Something went wrong at our end. Please try again in a moment."
-    }
+    },
+    "reading": "दस्तावेज़ पढ़ा जा रहा है…",
+    "checkRunning": "चल रही है",
+    "checkDone": "पूर्ण",
+    "checkFailed": "नहीं चल सकी",
+    "progressTitle": "क्या हो रहा है",
+    "connectionLost": "सजीव अद्यतन रुक गया। पृष्ठ फिर भी परिणाम दिखाएगा।",
+    "annotationHint": "जाँच में देखे गए मान नीचे दस्तावेज़ में चिह्नित हैं। प्रमाण देखने के लिए किसी एक को चुनें।",
+    "documentText": "दस्तावेज़, जाँच सहित चिह्नित",
+    "fromCheck": "स्रोत: {check}"
   },
   "finding": {
     "verified": "सत्यापित",
@@ -123,7 +132,8 @@
       "issuing_authority": "जारीकर्ता प्राधिकारी",
       "record": "मिलान अभिलेख",
       "document_content": "दस्तावेज़ की सामग्री",
-      "record_ref": "प्रमाण पत्र संख्या"
+      "record_ref": "प्रमाण पत्र संख्या",
+      "rules": "लागू नियम"
     }
   },
   "decision": {
@@ -147,5 +157,10 @@
       "network": "Could not reach the system. Check your connection and try again.",
       "unexpected": "Something went wrong at our end. Please try again in a moment."
     }
+  },
+  "checks": {
+    "verification": "अभिलेखों से मिलान",
+    "retrieval": "लागू नियम ढूँढना",
+    "compliance": "पात्रता और वैधता की जाँच"
   }
 }

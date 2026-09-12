@@ -207,3 +207,94 @@
   outline: var(--ux4g-border-width-md) solid var(--ux4g-focus-outline, var(--ux4g-text-brand-primary-default));
   outline-offset: 2px;
 }
+
+/* Make the spinner visible.
+
+   GAP: `.ux4g-spinner` sets `border: <width> solid transparent` and nothing in
+   the shipped CSS ever gives that border a colour — grep-verified: no rule in
+   2.1.0 sets a spinner border-color, and the sixteen `--Spinner-{variant}-Color`
+   properties Design.md §2 records are absent from this release (0 defined, 0
+   referenced). The README documents nine colour variants — primary, inverse and
+   danger by full, split and partial — none of which exist as classes. So the
+   component animates, at the right size, completely invisibly.
+
+   Three sides in the brand colour and one transparent is the usual way to make
+   rotation legible. Both values are UX4G tokens.
+
+   The spinner is reinforcement, never the message: each check's state is also
+   written as a word beside it. */
+.sutradhar-spinner {
+  border-color: var(--ux4g-border-color-primary-default);
+  border-top-color: transparent;
+}
+
+/* The annotated document.
+
+   GAP: UX4G has no component for marking values inside a block of text. The
+   nearest things are Tag and Badge, which are standalone labels, not inline
+   annotations over content. Everything below is layout and state; colour,
+   spacing, radius and type all come from UX4G tokens.
+
+   Status is carried by the label text inside each mark, never by colour: the
+   underline thickness and the words differ per status, so the marks stay
+   distinguishable in greyscale and to a screen reader. */
+.sutradhar-document-text {
+  margin: 0;
+  white-space: pre-wrap;
+  word-break: break-word;
+  font-family: inherit;
+  font-size: var(--ux4g-fs-14);
+  line-height: var(--ux4g-lh-24);
+  color: var(--ux4g-text-neutral-primary);
+}
+
+.sutradhar-annotation {
+  display: inline;
+  padding: var(--ux4g-padding-none) var(--ux4g-padding-3xs);
+  border: 0;
+  border-radius: var(--ux4g-radius-xs);
+  background: none;
+  font: inherit;
+  color: inherit;
+  cursor: pointer;
+  text-decoration: underline;
+  text-decoration-thickness: var(--ux4g-border-width-md);
+  text-underline-offset: 3px;
+}
+
+.sutradhar-annotation:focus-visible {
+  outline: var(--ux4g-border-width-md) solid var(--ux4g-text-brand-primary-default);
+  outline-offset: 2px;
+}
+
+.sutradhar-annotation[data-status='verified'] {
+  background-color: var(--ux4g-bg-success-subtle);
+  text-decoration-color: var(--ux4g-border-color-success-strong);
+}
+
+.sutradhar-annotation[data-status='mismatch'] {
+  background-color: var(--ux4g-bg-error-subtle);
+  text-decoration-color: var(--ux4g-border-color-error-strong);
+  text-decoration-style: double;
+}
+
+.sutradhar-annotation[data-status='unverifiable'] {
+  background-color: var(--ux4g-bg-warning-subtle);
+  text-decoration-color: var(--ux4g-border-color-warning-strong);
+  text-decoration-style: wavy;
+}
+
+.sutradhar-annotation[aria-pressed='true'] {
+  outline: var(--ux4g-border-width-md) solid var(--ux4g-text-brand-primary-default);
+  outline-offset: 2px;
+}
+
+/* The status word beside each marked value. Small, but present: the mark must
+   not depend on its colour to be understood. */
+.sutradhar-annotation-label {
+  margin-inline-start: var(--ux4g-margin-xs);
+  font-size: var(--ux4g-fs-11);
+  font-weight: var(--ux4g-font-weight-semibold);
+  text-decoration: none;
+  white-space: nowrap;
+}

@@ -15,15 +15,19 @@ import logging
 from sqlalchemy.orm import Session
 
 from app.agents.graph import run_pipeline
+from app.config import get_settings
+from contextlib import contextmanager
+
 from app.db.readonly import readonly_session_scope
 from app.models.document import Document
 from app.models.finding import AgentRun, Finding as FindingRow
 from app.models.types import utcnow
 from app.providers.base import ProviderUnavailable
-from app.providers.records import SeededRecordsProvider
+from app.providers.records import SeededRecordsProvider, SeededRulesProvider
 from app.providers.registry import get_provider
 from app.schemas.finding import CheckResult, Finding
 from app.services import audit, storage
+from app.services.events import ProgressEvent, broker
 from app.services.extraction import extract_document
 
 logger = logging.getLogger(__name__)
@@ -38,6 +42,7 @@ async def run_checks_for_document(session: Session, document: Document) -> None:
     """
     document.status = "processing"
     session.commit()
+    broker.publish(ProgressEvent(document_id=document.id, kind="reading"))
 
     audit.record(
         session,
@@ -58,17 +63,38 @@ async def run_checks_for_document(session: Session, document: Document) -> None:
             data=data, mime_type=document.mime_type, provider=provider
         )
         logger.info("document %s read via %s, %d fields", document.id, method, len(extracted))
+        document.extracted_text = raw_text
 
-        # The agents' only database access: a read-only session, closed before
-        # anything below writes.
-        with readonly_session_scope() as read_session:
-            classified, results = await run_pipeline(
-                document_id=document.id,
-                doc_type=document.doc_type,
-                extracted=extracted,
-                raw_text=raw_text,
-                records=SeededRecordsProvider(read_session),
+        # The checks' only database access. Each one opens its own read-only
+        # session, on its own thread — a session cannot be shared across
+        # threads, and a read-only connection has no write lock to contend for.
+        @contextmanager
+        def open_providers():
+            with readonly_session_scope() as read_session:
+                yield (
+                    SeededRecordsProvider(read_session),
+                    SeededRulesProvider(read_session),
+                )
+
+        def on_progress(kind: str, label_key: str, data: dict) -> None:
+            broker.publish(
+                ProgressEvent(
+                    document_id=document.id,
+                    kind=kind,
+                    label_key=label_key or None,
+                    data=data,
+                )
             )
+
+        classified, results = await run_pipeline(
+            document_id=document.id,
+            doc_type=document.doc_type,
+            extracted=extracted,
+            raw_text=raw_text,
+            open_providers=open_providers,
+            on_progress=on_progress,
+            check_delay_ms=get_settings().check_delay_ms,
+        )
         # The classification comes back as data and is written here, by the
         # application layer. The graph never holds a writable session.
         document.doc_type = classified
@@ -103,6 +129,9 @@ async def run_checks_for_document(session: Session, document: Document) -> None:
         logger.exception("document %s: checks failed", document.id)
         document.status = "failed"
         session.commit()
+        broker.publish(
+            ProgressEvent(document_id=document.id, kind="complete", data={"status": "failed"})
+        )
         audit.record(
             session, action="checks_completed", document_id=document.id,
             detail={"outcome": "failed"},
@@ -165,6 +194,20 @@ def _persist(
     # review gate, and nothing below this line decides anything.
     document.status = "pending_review"
     session.commit()
+
+    broker.publish(
+        ProgressEvent(
+            document_id=document.id,
+            kind="complete",
+            data={
+                "status": "pending_review",
+                "findings": sum(len(r.findings) for r in results),
+                "flagged": sum(
+                    1 for r in results for f in r.findings if f.status != "verified"
+                ),
+            },
+        )
+    )
 
     audit.record(
         session,

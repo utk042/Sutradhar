@@ -3,8 +3,16 @@
 import {useCallback, useEffect, useId, useState} from 'react';
 import {useFormatter, useTranslations} from 'next-intl';
 import {useRouter} from '@/i18n/routing';
+import AnnotatedDocument from '@/components/AnnotatedDocument';
+import CheckProgressPanel from '@/components/CheckProgressPanel';
 import FindingCard from '@/components/FindingCard';
 import {fieldLabel} from '@/lib/fieldLabel';
+import {
+  INITIAL_PROGRESS,
+  reduceProgress,
+  watchProgress,
+  type ProgressState
+} from '@/lib/progress';
 import StatusTag from '@/components/StatusTag';
 import {
   decide,
@@ -26,8 +34,12 @@ import {
  *
  * Nothing on this screen decides anything. The two buttons at the bottom are the
  * only thing in the system that does.
+ *
+ * Progress arrives over Server-Sent Events rather than polling. The stream is
+ * the fast path, not the source of truth: when it closes — finished, dropped, or
+ * never opened — the document is fetched and rendered from that. So a proxy that
+ * kills the connection costs a moment, not correctness.
  */
-const POLL_MS = 1500;
 
 export default function ReviewClient({documentId}: {documentId: number}) {
   const t = useTranslations('review');
@@ -36,6 +48,10 @@ export default function ReviewClient({documentId}: {documentId: number}) {
   const router = useRouter();
 
   const [doc, setDoc] = useState<DocumentDetail | null>(null);
+  const [progress, setProgress] = useState<ProgressState>(INITIAL_PROGRESS);
+  //: Which finding's evidence is open. Shared between the document's marks and
+  //: the findings list, so selecting either reveals the same thing.
+  const [selectedFinding, setSelectedFinding] = useState<number | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState<null | 'approved' | 'rejected'>(null);
   const [mode, setMode] = useState<null | 'reject' | 'override'>(null);
@@ -52,14 +68,20 @@ export default function ReviewClient({documentId}: {documentId: number}) {
     load();
   }, [load]);
 
-  // While the checks are still running the page updates itself, so the officer
-  // never has to reload to find out whether it is their turn.
+  // Follow the run live. The broker replays what has already happened, so
+  // connecting after the checks have finished still shows what they did.
   const running = doc?.status === 'uploaded' || doc?.status === 'processing';
   useEffect(() => {
     if (!running) return;
-    const timer = setInterval(load, POLL_MS);
-    return () => clearInterval(timer);
-  }, [running, load]);
+    const close = watchProgress(
+      documentId,
+      (payload) => setProgress((current) => reduceProgress(current, payload)),
+      () => {
+        load();
+      }
+    );
+    return close;
+  }, [running, documentId, load]);
 
   if (doc === null) return null;
 
@@ -147,6 +169,25 @@ export default function ReviewClient({documentId}: {documentId: number}) {
             </div>
           </div>
 
+          {doc.extracted_text && doc.findings.length > 0 && (
+            <div className="ux4g-card ux4g-card-outline ux4g-mb-s">
+              <div className="ux4g-card-body">
+                <h3 className="ux4g-heading-xs-strong ux4g-mb-xs">{t('documentText')}</h3>
+                <AnnotatedDocument
+                  text={doc.extracted_text}
+                  findings={doc.findings}
+                  selectedId={selectedFinding}
+                  onSelect={(id) => {
+                    setSelectedFinding((current) => (current === id ? null : id));
+                    document
+                      .getElementById(`finding-${id}`)
+                      ?.scrollIntoView({behavior: 'smooth', block: 'center'});
+                  }}
+                />
+              </div>
+            </div>
+          )}
+
           {Object.keys(doc.extracted).length > 0 && (
             <>
               <h3 className="ux4g-heading-xs-strong ux4g-mb-xs">{t('extractedTitle')}</h3>
@@ -156,7 +197,7 @@ export default function ReviewClient({documentId}: {documentId: number}) {
                     {Object.entries(doc.extracted).map(([field, value]) => (
                       <tr key={field}>
                         <th scope="row" className="ux4g-table-cell-text">
-                          {fieldLabel(tf, field)}
+                          {fieldLabel(tf as never, field)}
                         </th>
                         <td className="ux4g-table-cell-text">{value}</td>
                       </tr>
@@ -175,17 +216,7 @@ export default function ReviewClient({documentId}: {documentId: number}) {
           </h2>
 
           {running ? (
-            <div className="ux4g-card ux4g-card-solid" aria-live="polite">
-              <div className="ux4g-card-body ux4g-d-flex ux4g-ai-center ux4g-gap-s">
-                <span className="ux4g-spinner-primary-full ux4g-spinner-md" role="presentation" />
-                <div>
-                  <p className="ux4g-body-m-default">{t('running')}</p>
-                  <p className="ux4g-body-s-default ux4g-text-neutral-secondary">
-                    {t('runningHint')}
-                  </p>
-                </div>
-              </div>
-            </div>
+            <CheckProgressPanel progress={progress} />
           ) : (
             <>
               <p className="ux4g-body-m-default ux4g-mb-s" aria-live="polite">
@@ -194,7 +225,14 @@ export default function ReviewClient({documentId}: {documentId: number}) {
               <h3 className="sutradhar-sr-only">{t('findingsTitle')}</h3>
               <ul className="sutradhar-list-reset">
                 {ordered.map((finding) => (
-                  <FindingCard key={finding.id} finding={finding} />
+                  <FindingCard
+                    key={finding.id}
+                    finding={finding}
+                    expanded={selectedFinding === finding.id}
+                    onToggle={(id) =>
+                      setSelectedFinding((current) => (current === id ? null : id))
+                    }
+                  />
                 ))}
               </ul>
             </>

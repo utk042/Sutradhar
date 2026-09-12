@@ -51,6 +51,8 @@ class DocumentDetail(DocumentSummary):
     findings: list[FindingOut]
     checks: list[CheckRunOut]
     extracted: dict[str, str]
+    #: The document's text, so the review screen can mark checked values in place.
+    extracted_text: str | None = None
     #: True when at least one finding is blocking, so the screen can require an
     #: override note before approval.
     has_blocking: bool

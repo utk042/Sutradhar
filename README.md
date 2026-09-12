@@ -11,10 +11,11 @@ The system prepares the decision. It never makes it.
 
 ---
 
-## Status: Phase 2 complete
+## Status: Phase 3 complete
 
-The whole spine works: a document is uploaded, read, checked against the
-records, and held for a person, who decides.
+A document is uploaded, read, checked by three specialists running together, and
+held for a person, who decides — watching the checks as they run and seeing every
+verdict marked on the document itself.
 
 **Working now**
 
@@ -24,19 +25,55 @@ records, and held for a person, who decides.
   filenames outside the web root
 - Field extraction: text-layer PDFs read directly, scans through the configured
   model provider
-- One verification check, run in a LangGraph graph built from `pipeline.yaml`,
-  reading `registry_records` through the read-only connection
-- Review screen: the document beside the findings, evidence one click away,
-  Approve and Reject below and disabled until the checks finish
+- Three checks — records match, rules that apply, eligibility and validity — run
+  concurrently in a LangGraph graph built from `pipeline.yaml`, reading through
+  the read-only connection
+- Live progress over Server-Sent Events while the checks run
+- Review screen: the document with every checked value marked in place, the
+  findings beside it, evidence one click away, Approve and Reject below and
+  disabled until the checks finish
 - The review gate — the only path that decides anything — with rejection reasons
   and override notes
 - Append-only audit log with a hash chain, verified to detect tampering
 - English and Hindi, every user-facing string in the locale files
 - Keyboard operation and screen-reader labelling throughout
 
-**Not built yet** — the other two checks and running all three in parallel, SSE
-progress streaming, inline annotations on the document image, the read-only
-enforcement tests, the dept head dashboard and the model switcher. Phases 3–5.
+**Not built yet** — the read-only enforcement tests, the dept head dashboard,
+the model switcher and audit log export. Phases 4–5.
+
+## The three checks run together
+
+`asyncio.gather` is not by itself enough. It interleaves coroutines only where
+they await, and these checks are synchronous work — SQLite reads and comparisons
+— that never yields. Gathered directly they ran one after another, which the
+timings showed plainly: three checks starting 0 ms, 2.95 ms and 4.32 ms apart,
+with wall time equal to their sum.
+
+So each check is dispatched with `asyncio.to_thread` and opens its own read-only
+session inside its own thread. A session cannot be shared across threads, and a
+read-only connection has no write lock to contend for, so one session per check
+is both correct and the cheapest answer.
+
+Measured on the same document afterwards:
+
+```
+verification  + 0.00 -> + 8.00 ms  ################################################
+retrieval     + 1.46 -> + 6.46 ms          ##############################
+compliance    + 2.04 -> + 8.04 ms              ####################################
+
+wall time      8.04 ms        <- about the slowest check
+sum of checks    19 ms        <- what running them in turn would cost
+```
+
+`tests/test_parallel_execution.py` asserts this structurally, with runners that
+sleep: the graph must finish in about the time of the slowest, and every check's
+recorded window must overlap the others'.
+
+Because the checks are local work with no model configured, they finish in
+single-digit milliseconds — faster than the screen can draw. `SUTRADHAR_CHECK_DELAY_MS`
+adds a delay to each one so the progress view and the concurrency can be seen;
+it is applied concurrently, so three checks at 900 ms still finish in about
+900 ms rather than 2.7 s.
 
 ## Try it
 
@@ -115,6 +152,7 @@ development; it is switched off when `SUTRADHAR_ENVIRONMENT=production`.
 | `./.venv/bin/alembic revision --autogenerate -m "..."` | New migration |
 | `./.venv/bin/alembic downgrade -1` | Roll back one migration |
 | `npm run smoke` | Happy path in a real browser (both servers must be running) |
+| `./.venv/bin/python -m pytest tests/` | The parallel-execution tests |
 
 ---
 
