@@ -1,0 +1,135 @@
+/* ===========================================================================
+   Sutradhar application CSS.
+
+   Everything UX4G provides is used as a UX4G class or token. This file holds
+   only the two things the design system does not ship, plus one approved token
+   repoint. Each is justified inline, as the contract requires.
+
+   No colour, spacing, radius, type or shadow value is written literally here —
+   every value is a UX4G custom property.
+   =========================================================================== */
+
+/* ---------------------------------------------------------------------------
+   1. Approved token repoint — accessibility fix, not a theme change.
+
+   Design.md §9 records the resting control boundary failing non-text contrast
+   and names the fix: repoint it at a darker step rather than introduce a new
+   colour. Measured in 2.1.0, light theme, against the input's own #ffffff
+   background:
+
+     --ux4g-border-color-neutral-subtle   #e5e5e5   1.26:1   FAIL  (the default)
+     --ux4g-border-color-neutral-default  #d9d9d9   1.41:1   FAIL
+     --ux4g-border-color-neutral-strong   #737373   4.74:1   PASS
+
+   WCAG 1.4.11 requires 3:1 for a control boundary when it is the only thing
+   indicating the control's extent. This is the resting border of every input
+   and textarea in the service; at 1.26:1 a low-vision officer cannot see where
+   the field is.
+
+   Both values below are tier-2 semantic tokens — no tier-1 primitive is
+   referenced, per Design.md §13.
+
+   Approved by the project owner before implementation.
+   --------------------------------------------------------------------------- */
+
+/* The documented control token. Repointed for whatever consumes it. */
+:root {
+  --ux4g-control-border-default: var(--ux4g-border-color-neutral-strong) !important;
+}
+
+/* The token the Input and Textarea components actually consume in 2.1.0 is
+   --ux4g-border-color-neutral-subtle, not --ux4g-control-border-default. It is
+   repointed here on the control box itself rather than at :root, because the
+   same token is the correct decorative value for table row dividers and rules,
+   where Design.md §9 explicitly accepts sub-3:1. Scoping keeps the fix to
+   control boundaries and leaves decoration alone.
+
+   This sets a token, not component styling, and the component's own
+   hover/focus/error rules continue to win — nothing here is !important. */
+.ux4g-input,
+.ux4g-textarea {
+  --ux4g-border-color-neutral-subtle: var(--ux4g-border-color-neutral-strong);
+}
+
+/* ---------------------------------------------------------------------------
+   2. Text size control (A− / A / A+).
+
+   GAP: ux4g-web-components@2.1.0 ships no Accessibility Bar. Verified absent —
+   the compiled stylesheet contains no accessibility, contrast, zoom or
+   font-size classes, and the only "accessibility" strings in the bundled
+   runtime are code comments about keyboard handling. Design.md §12 marks the
+   component available for web, which is a contract error against the shipped
+   artifact.
+
+   2.1.0 converted all component and utility values from px to rem, so scaling
+   the root font size scales the whole interface, not only loose text. The
+   multiplier is all this needs to be.
+
+   The control itself is built from ux4g-btn classes and carries no styling of
+   its own.
+   --------------------------------------------------------------------------- */
+:root {
+  --sutradhar-text-scale: 1;
+}
+
+html[data-sutradhar-text-scale] {
+  font-size: calc(100% * var(--sutradhar-text-scale));
+}
+
+/* ---------------------------------------------------------------------------
+   3. Page shell layout.
+
+   GAP: UX4G ships Navbar and Footer but no page-shell primitive that pins a
+   footer to the bottom of a short page. Layout only — no colour, no type.
+   --------------------------------------------------------------------------- */
+.sutradhar-shell {
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
+}
+
+.sutradhar-shell > main {
+  flex: 1 0 auto;
+}
+
+/* Centred single-column reading surface for forms.
+
+   GAP: ux4g-container is the right wrapper for the page shell, but its desktop
+   ceiling is 71.25rem (1140px) — far too wide a measure for a form. UX4G ships
+   no narrower reading container (ux4g-container-sm caps at 540px, too narrow for
+   a two-column field row later). 768px matches the Mobile-mode content ceiling
+   in Design.md §8 and keeps the line length readable at arm's length. */
+.sutradhar-narrow {
+  width: 100%;
+  max-width: 768px;
+  margin-inline: auto;
+}
+
+/* Visible only to screen readers. UX4G has no equivalent utility; this is the
+   standard clip pattern and uses no design tokens. */
+.sutradhar-sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+/* Skip link: hidden until focused, then rendered in normal flow. Colour and
+   spacing come from UX4G tokens. */
+.sutradhar-skip-link {
+  position: absolute;
+  left: var(--ux4g-padding-s);
+  top: var(--ux4g-padding-s);
+  z-index: 100;
+  transform: translateY(-200%);
+  transition: transform 120ms ease-out;
+}
+
+.sutradhar-skip-link:focus {
+  transform: translateY(0);
+}

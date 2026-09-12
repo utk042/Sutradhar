@@ -1,0 +1,50 @@
+{
+  "app": {
+    "name": "Sutradhar",
+    "tagline": "Document verification desk",
+    "skipToContent": "Skip to main content",
+    "sampleDataNotice": "Records shown here are sample data standing in for an official records system. This is not a live government database."
+  },
+  "accessibility": {
+    "groupLabel": "Text size",
+    "decrease": "Decrease text size",
+    "increase": "Increase text size",
+    "reset": "Normal text size",
+    "decreaseShort": "A−",
+    "resetShort": "A",
+    "increaseShort": "A+",
+    "currentSize": "Text size is now {percent}%"
+  },
+  "language": {
+    "label": "Language",
+    "en": "English",
+    "hi": "हिन्दी"
+  },
+  "login": {
+    "title": "Sign in",
+    "intro": "Sign in with the mobile number registered for your office.",
+    "mobileLabel": "Mobile number",
+    "mobileHelp": "10 digits, no spaces",
+    "passwordLabel": "Password",
+    "submit": "Sign in",
+    "submitting": "Signing in…",
+    "errors": {
+      "mobileRequired": "Enter your mobile number.",
+      "mobileFormat": "Enter the 10-digit mobile number registered for your office.",
+      "passwordRequired": "Enter your password.",
+      "invalid_credentials": "That mobile number and password do not match. Check both and try again.",
+      "network": "Could not reach the system. Check your connection and try again.",
+      "unexpected": "Something went wrong at our end. Please try again in a moment."
+    }
+  },
+  "home": {
+    "title": "Your desk",
+    "signedInAs": "Signed in as {name}",
+    "signOut": "Sign out",
+    "phaseNotice": "Document upload and verification checks arrive in the next stage of this build."
+  },
+  "footer": {
+    "copyright": "Government of India",
+    "builtWith": "Built with the UX4G Design System"
+  }
+}
