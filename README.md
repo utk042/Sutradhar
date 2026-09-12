@@ -11,11 +11,12 @@ The system prepares the decision. It never makes it.
 
 ---
 
-## Status: Phase 3 complete
+## Status: Phase 4 complete
 
 A document is uploaded, read, checked by three specialists running together, and
 held for a person, who decides — watching the checks as they run and seeing every
-verdict marked on the document itself.
+verdict marked on the document itself. The guarantees behind that are now
+executable: 66 tests that each fail when the thing they protect is broken.
 
 **Working now**
 
@@ -37,9 +38,63 @@ verdict marked on the document itself.
 - Append-only audit log with a hash chain, verified to detect tampering
 - English and Hindi, every user-facing string in the locale files
 - Keyboard operation and screen-reader labelling throughout
+- The guarantees under test: read-only isolation, the review gate, the audit
+  chain, role enforcement and upload safety
 
-**Not built yet** — the read-only enforcement tests, the dept head dashboard,
-the model switcher and audit log export. Phases 4–5.
+**Not built yet** — the dept head dashboard, the model switcher and audit log
+export. Phase 5.
+
+## The guarantees, as tests
+
+```
+./.venv/bin/python -m pytest tests/ -v
+```
+
+| File | What it holds to account |
+|---|---|
+| `test_readonly_isolation.py` | Nothing under `agents/` can reach the write engine; a check that tries to write is refused by the driver |
+| `test_review_gate.py` | One route, and only one, can write a decision |
+| `test_audit_chain.py` | The log is append-only and tamper-evident |
+| `test_roles.py` | The role comes from the database, never from the token |
+| `test_upload_safety.py` | Uploads are judged on their bytes; document text is data |
+| `test_parallel_execution.py` | The three checks run together |
+
+Every one of these was checked by breaking the thing it protects and confirming
+it fails. Two examples, run against the real code:
+
+```
+$ # make an agent import the write engine
+AssertionError: app/agents/ can reach the read-write engine:
+    verification.py -> app.db.app
+
+$ # let the check runner approve a clean document itself
+AssertionError: a decision is written outside the review gate:
+    services/review.py line(s) [196]
+```
+
+The import walk follows imports rather than searching text, so it catches an
+agent reaching the write engine *through* another module — `compliance.py ->
+records.py -> app.db.app` — which a grep for the string would miss, and reports
+the chain. The gate test reads the syntax tree for any assignment of a decision
+to a document's status, and names the file and line.
+
+### Tampering with the audit log
+
+Each case below is performed directly against the database, past the
+application, and the chain identifies the row it broke:
+
+| What was done | Detected at |
+|---|---|
+| A decision edited in place | that row |
+| The action changed | that row |
+| The act blamed on a real colleague | that row |
+| A row re-pointed at another document | that row |
+| A row removed from the middle | the row after it |
+| A row forged and appended | the forged row |
+
+The log also refuses personal data outright: a name, a date of birth, a document
+number or a mobile number in an audit detail raises rather than being written,
+because the log is exportable and an export must not become a leak.
 
 ## The three checks run together
 

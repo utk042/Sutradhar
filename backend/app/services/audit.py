@@ -64,7 +64,15 @@ def record(
     document_id: int | None = None,
     detail: dict | None = None,
 ) -> AuditLogEntry:
-    """Append one row. The caller's transaction commits it."""
+    """Append one row. The caller's transaction commits it.
+
+    The new row is flushed before returning. The sequence number and the link to
+    the previous row are both read from the table, and these sessions are created
+    with autoflush off — so without an explicit flush, two rows appended inside
+    one transaction would each compute the same sequence and the same prev_hash,
+    colliding on the unique constraint and aborting the whole transaction. The
+    flush is not a commit: the caller still decides whether any of it lands.
+    """
     detail = detail or {}
     leaked = _FORBIDDEN_DETAIL_KEYS.intersection(detail)
     if leaked:
@@ -97,6 +105,7 @@ def record(
         ),
     )
     session.add(entry)
+    session.flush()
     return entry
 
 
