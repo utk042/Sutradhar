@@ -4,9 +4,8 @@ import HomeClient from './HomeClient';
 /**
  * Officer home.
  *
- * Phase 1 renders the signed-in shell and the honest notice about sample data.
- * The upload action and pending list arrive in Phase 2, when there is something
- * behind them — a button that does nothing is worse than no button.
+ * One action — upload — and the list of documents waiting for a decision.
+ * Nothing else, per the brief.
  */
 export default async function HomePage({
   params
@@ -19,13 +18,10 @@ export default async function HomePage({
   const ta = await getTranslations('app');
 
   return (
-    <section className="sutradhar-narrow ux4g-p-l">
+    <section className="sutradhar-page ux4g-p-l">
       <h1 className="ux4g-heading-l-strong ux4g-mb-l">{t('title')}</h1>
       <HomeClient />
-      <div className="ux4g-alert ux4g-alert-info ux4g-mt-l">
-        <span className="ux4g-body-m-default">{t('phaseNotice')}</span>
-      </div>
-      <p className="ux4g-body-s-default ux4g-text-neutral-secondary ux4g-mt-l">
+      <p className="ux4g-body-s-default ux4g-text-neutral-tertiary ux4g-mt-xl">
         {ta('sampleDataNotice')}
       </p>
     </section>

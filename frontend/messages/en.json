@@ -31,9 +31,121 @@
     "title": "Your desk",
     "signedInAs": "Signed in as {name}",
     "signOut": "Sign out",
-    "phaseNotice": "Document upload and verification checks arrive in the next stage of this build."
+    "upload": "Upload document",
+    "uploading": "Uploading…",
+    "chooseFile": "Choose a document to upload",
+    "fileHint": "PDF, PNG or JPEG, up to 10 MB",
+    "pendingTitle": "Documents waiting for you",
+    "emptyTitle": "Nothing waiting",
+    "emptyBody": "When you upload a document it will appear here once the checks have run.",
+    "colReference": "Reference",
+    "colDocument": "Document",
+    "colType": "Type",
+    "colStatus": "Status",
+    "colUploaded": "Uploaded",
+    "open": "Open",
+    "review": "Review"
   },
   "footer": {
     "tagline": "Sutradhar prepares the decision. A person makes it."
+  },
+  "status": {
+    "uploaded": "Waiting to be checked",
+    "processing": "Checks running",
+    "pending_review": "Waiting for your decision",
+    "approved": "Approved",
+    "rejected": "Rejected",
+    "failed": "Could not be checked"
+  },
+  "docType": {
+    "birth_certificate": "Birth certificate",
+    "income_certificate": "Income certificate",
+    "scheme_application": "Scheme application",
+    "unknown": "Not recognised"
+  },
+  "review": {
+    "title": "Review document {reference}",
+    "documentPane": "Document",
+    "checksPane": "Checks",
+    "running": "Checking against records…",
+    "runningHint": "This usually takes a few seconds. The page will update on its own.",
+    "complete": "{count, plural, =0 {Checks complete. Nothing was flagged.} one {Checks complete. One thing to look at.} other {Checks complete. # things to look at.}}",
+    "findingsTitle": "What the checks found",
+    "evidenceTitle": "Evidence",
+    "onDocument": "On the document",
+    "inRecords": "In the records",
+    "source": "Source",
+    "notRecorded": "Not recorded",
+    "viewEvidence": "View evidence",
+    "closeEvidence": "Close",
+    "decisionTitle": "Your decision",
+    "decisionHint": "Nothing is decided until you choose. The checks above only prepare the file.",
+    "approve": "Approve",
+    "reject": "Reject",
+    "approving": "Approving…",
+    "rejecting": "Rejecting…",
+    "waitForChecks": "You can decide once the checks have finished.",
+    "reasonLabel": "Why are you rejecting this document?",
+    "reasonHint": "This is recorded with your decision.",
+    "overrideLabel": "Something here needs your note before you can approve",
+    "overrideHint": "One of the checks flagged a problem. Explain why you are approving anyway.",
+    "cancel": "Cancel",
+    "technicalDetails": "Technical details",
+    "checkName": "Check",
+    "checkDuration": "Time taken",
+    "checkStatus": "Result",
+    "milliseconds": "{ms} ms",
+    "readDocument": "Open the uploaded file",
+    "extractedTitle": "What was read from the document",
+    "errors": {
+      "reason_required": "Please give a reason before rejecting.",
+      "override_note_required": "Please add a note explaining why you are approving this.",
+      "document_not_awaiting_review": "This document has already been decided.",
+      "document_not_found": "That document could not be found.",
+      "network": "Could not reach the system. Check your connection and try again.",
+      "unexpected": "Something went wrong at our end. Please try again in a moment."
+    }
+  },
+  "finding": {
+    "verified": "Verified",
+    "mismatch": "Does not match",
+    "unverifiable": "Needs your check",
+    "severityBlocking": "Must be resolved",
+    "severityWarning": "Worth checking",
+    "severityInfo": "For information",
+    "fields": {
+      "full_name": "Name",
+      "date_of_birth": "Date of birth",
+      "father_name": "Father's name",
+      "address": "Address",
+      "annual_income": "Annual income",
+      "issued_on": "Date of issue",
+      "issuing_authority": "Issuing authority",
+      "record": "Matching record",
+      "document_content": "Document contents",
+      "record_ref": "Certificate number"
+    }
+  },
+  "decision": {
+    "titleApproved": "Document approved",
+    "titleRejected": "Document rejected",
+    "summary": "{reference} was {decision} by {officer} on {when}.",
+    "approvedWord": "approved",
+    "rejectedWord": "rejected",
+    "reasonGiven": "Reason given",
+    "noteGiven": "Your note",
+    "auditTitle": "This decision has been recorded in the audit log.",
+    "backToDesk": "Back to your desk"
+  },
+  "upload": {
+    "errors": {
+      "upload_empty": "That file is empty. Choose another one.",
+      "upload_too_large": "That file is larger than 10 MB. Choose a smaller one.",
+      "upload_wrong_type": "Only PDF, PNG and JPEG files can be uploaded.",
+      "upload_type_mismatch": "That file does not match its name. Check the file and try again.",
+      "upload_unreadable": "That file could not be read. Choose another one.",
+      "network": "Could not reach the system. Check your connection and try again.",
+      "unexpected": "Something went wrong at our end. Please try again in a moment."
+    }
   }
 }

@@ -135,3 +135,75 @@
 .sutradhar-logo {
   color: var(--ux4g-text-brand-primary-default);
 }
+
+/* A wider page than the sign-in form. The review screen carries two columns and
+   a table; the 768px reading measure would squeeze both. Uses the same
+   max-width approach and UX4G tokens for its gutter. */
+.sutradhar-page {
+  width: 100%;
+  max-width: 1140px;
+  margin-inline: auto;
+}
+
+/* The review screen's two panes.
+
+   GAP: UX4G ships a 12-column grid (ux4g-col-*), but it has no split-pane
+   primitive that keeps the document beside the findings and collapses cleanly
+   to one column. At 1366x768 — the desktop this is built for — the document
+   needs the wider share. Layout only; every gap is a UX4G token. */
+.sutradhar-review-split {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: var(--ux4g-section-xs);
+}
+
+@media (min-width: 1024px) {
+  .sutradhar-review-split {
+    grid-template-columns: 3fr 4fr;
+    gap: var(--ux4g-section-xs);
+    align-items: start;
+  }
+}
+
+/* Rows of tags and buttons wrap rather than overflow at narrow widths. UX4G's
+   flex utilities do not include a wrap helper. */
+.sutradhar-wrap {
+  flex-wrap: wrap;
+}
+
+/* Tables are the one thing allowed to scroll sideways, in their own container,
+   so the page itself never does. */
+.sutradhar-table-scroll {
+  overflow-x: auto;
+  max-width: 100%;
+}
+
+/* The findings list carries its own cards; the default list bullets and indent
+   would fight them. */
+.sutradhar-list-reset {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+/* GAP: UX4G ships an Upload component (ux4g-upload) built around drag-and-drop
+   with its own button and file-list markup. This screen needs a single native
+   file input so that the control an officer tabs to is the one that opens the
+   file browser, with no second interactive element beside it. Only spacing and
+   the focus target are set; colour and radius come from tokens. */
+.sutradhar-file-input {
+  display: block;
+  width: 100%;
+  max-width: 32rem;
+  padding: var(--ux4g-padding-s);
+  border: var(--ux4g-border-width-sm) solid var(--ux4g-border-color-neutral-strong);
+  border-radius: var(--ux4g-radius-md);
+  background-color: var(--ux4g-bg-neutral-elevated);
+  color: var(--ux4g-text-neutral-primary);
+  font: inherit;
+}
+
+.sutradhar-file-input:focus-visible {
+  outline: var(--ux4g-border-width-md) solid var(--ux4g-focus-outline, var(--ux4g-text-brand-primary-default));
+  outline-offset: 2px;
+}

@@ -56,6 +56,10 @@ class DocumentDetail(DocumentSummary):
     has_blocking: bool
     reviewed_at: datetime | None = None
     decision_reason: str | None = None
+    #: The officer's justification for approving over a blocking finding. Shown
+    #: back to them on the confirmation, because a note nobody sees again is not
+    #: a record of anything.
+    override_note: str | None = None
 
 
 class ReviewDecision(BaseModel):

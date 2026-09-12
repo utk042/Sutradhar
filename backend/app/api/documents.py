@@ -114,6 +114,7 @@ def _load_detail(session: Session, document_id: int) -> DocumentDetail:
         has_blocking=any(f.severity == "blocking" for f in findings),
         reviewed_at=document.reviewed_at,
         decision_reason=document.decision_reason,
+        override_note=document.override_note,
     )
 
 
