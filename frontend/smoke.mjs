@@ -8,12 +8,25 @@
  * Both servers must already be running (see README).
  *   npm run smoke
  *
+ * Credentials come from the environment — the same seed variables used to
+ * create the users — so no password is written into this file:
+ *   SUTRADHAR_SEED_OFFICER_PASSWORD=... npm run smoke
+ *
  * PLAYWRIGHT_CHROMIUM_PATH overrides the browser binary for environments that
  * ship their own Chromium; unset, Playwright uses the one it installed.
  */
 import {chromium} from 'playwright';
 
 const BASE = process.env.SMOKE_BASE_URL ?? 'http://localhost:3000';
+const MOBILE = process.env.SMOKE_OFFICER_MOBILE ?? '9000000001';
+const PASSWORD = process.env.SUTRADHAR_SEED_OFFICER_PASSWORD;
+if (!PASSWORD) {
+  console.error(
+    'SUTRADHAR_SEED_OFFICER_PASSWORD is not set. Load it from .env first:\n' +
+    '  set -a && . ../.env && set +a && npm run smoke'
+  );
+  process.exit(1);
+}
 const executablePath = process.env.PLAYWRIGHT_CHROMIUM_PATH || undefined;
 const b = await chromium.launch({executablePath});
 const ctx = await b.newContext({viewport:{width:1366,height:768}});
@@ -30,7 +43,7 @@ console.log('empty submit ->', JSON.stringify(await p.locator('.ux4g-input-helpe
 console.log('aria-invalid set:', await p.locator('input[type=tel]').getAttribute('aria-invalid'));
 
 // ---------- 2. wrong password: plain language, no status code ----------
-await p.fill('input[type=tel]','9000000001');
+await p.fill('input[type=tel]',MOBILE);
 await p.fill('input[type=password]','definitely-wrong');
 await p.locator('button[type=submit]').click();
 const alertBox = p.locator('.ux4g-alert[role=alert]');
@@ -47,9 +60,9 @@ await p.screenshot({path:'/tmp/shots/02-error.png'});
 // ---------- 3. keyboard-only sign in ----------
 await p.fill('input[type=tel]',''); await p.fill('input[type=password]','');
 await p.locator('input[type=tel]').focus();
-await p.keyboard.type('9000000001');
+await p.keyboard.type(MOBILE);
 await p.keyboard.press('Tab');
-await p.keyboard.type('officer-demo-pass-1');
+await p.keyboard.type(PASSWORD);
 await p.keyboard.press('Tab');
 console.log('\nfocus before Enter:', await p.evaluate(()=>document.activeElement.textContent?.trim()));
 await p.keyboard.press('Enter');
