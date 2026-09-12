@@ -1,0 +1,2 @@
+# Keeps this directory in the repository. The SQLite database and seed data
+# live here; the database itself is gitignored.

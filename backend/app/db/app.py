@@ -23,7 +23,7 @@ from sqlalchemy.orm import Session, sessionmaker
 from app.config import get_settings
 
 _settings = get_settings()
-_settings.db_path.parent.mkdir(parents=True, exist_ok=True)
+_settings.ensure_directories()
 
 app_engine: Engine = create_engine(
     _settings.app_database_url,

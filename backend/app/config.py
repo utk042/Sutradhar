@@ -50,6 +50,18 @@ class Settings(BaseSettings):
 
     environment: Literal["development", "production"] = "development"
 
+    @field_validator("db_path", "upload_dir")
+    @classmethod
+    def _resolve_against_repo_root(cls, v: Path) -> Path:
+        """Anchor relative paths to the repository root, not the process's cwd.
+
+        `SUTRADHAR_DB_PATH=data/app.db` should mean the same file whether the
+        command was run from the repository root or from backend/. Left relative
+        it silently resolves to a different database per directory, which is how
+        "no such table: users" happens immediately after a successful migration.
+        """
+        return v if v.is_absolute() else (REPO_ROOT / v).resolve()
+
     @field_validator("jwt_secret")
     @classmethod
     def _reject_placeholder_secret(cls, v: str) -> str:
@@ -74,6 +86,18 @@ class Settings(BaseSettings):
     def app_database_url(self) -> str:
         """Read-write SQLite URL. Only the application layer may use this."""
         return f"sqlite:///{self.db_path}"
+
+
+    def ensure_directories(self) -> None:
+        """Create the directories the application writes to.
+
+        Git does not track empty directories, so `data/` and `storage/uploads/`
+        do not exist in a fresh clone. Every entry point that opens the database
+        calls this first — including Alembic, which runs before the application
+        and would otherwise fail with "unable to open database file".
+        """
+        self.db_path.parent.mkdir(parents=True, exist_ok=True)
+        self.upload_dir.mkdir(parents=True, exist_ok=True)
 
 
 @lru_cache

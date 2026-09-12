@@ -24,7 +24,8 @@ data/*.db
 data/*.db-journal
 data/*.db-wal
 data/*.db-shm
-storage/uploads/
+storage/uploads/*
+!storage/uploads/.gitkeep
 
 # OS / editor
 .DS_Store

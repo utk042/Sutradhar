@@ -21,7 +21,10 @@ config = context.config
 if config.config_file_name is not None:
     fileConfig(config.config_file_name)
 
-config.set_main_option("sqlalchemy.url", get_settings().app_database_url)
+_settings = get_settings()
+# Alembic runs before the application, on a clone where data/ may not exist yet.
+_settings.ensure_directories()
+config.set_main_option("sqlalchemy.url", _settings.app_database_url)
 target_metadata = Base.metadata
 
 
