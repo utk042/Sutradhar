@@ -1,0 +1,31 @@
+# Python
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+*.egg-info/
+.pytest_cache/
+.ruff_cache/
+
+# Node
+node_modules/
+.next/
+out/
+*.tsbuildinfo
+next-env.d.ts
+
+# Secrets & local config
+.env
+.env.local
+.env.*.local
+
+# Data: SQLite database and citizen uploads never enter version control
+data/*.db
+data/*.db-journal
+data/*.db-wal
+data/*.db-shm
+storage/uploads/
+
+# OS / editor
+.DS_Store
+Thumbs.db
