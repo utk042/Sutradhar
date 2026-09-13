@@ -5,6 +5,7 @@ import {getMessages, getTranslations, setRequestLocale} from 'next-intl/server';
 
 import Ux4gRuntime from '@/components/Ux4gRuntime';
 import Logo from '@/components/Logo';
+import HeadNav from '@/components/HeadNav';
 import LanguageSwitcher from '@/components/LanguageSwitcher';
 import {routing, type Locale} from '@/i18n/routing';
 
@@ -77,6 +78,7 @@ export default async function LocaleLayout({
               <div className="ux4g-container ux4g-navbar-wrap">
                 <Logo />
                 <div className="ux4g-navbar-right ux4g-d-flex ux4g-ai-center ux4g-gap-s">
+                  <HeadNav />
                   <LanguageSwitcher />
                 </div>
               </div>

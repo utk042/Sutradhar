@@ -179,6 +179,113 @@ export async function uploadDocument(file: File): Promise<ApiResult<DocumentSumm
   }
 }
 
+// --- Department (head of department only) ----------------------------------
+
+export interface Department {
+  id: number;
+  code: string;
+  name: string;
+}
+
+export interface Officer {
+  id: number;
+  mobile_number: string;
+  full_name: string;
+  role: 'officer' | 'dept_head';
+  is_active: boolean;
+  created_at: string;
+  pending: number;
+  decided: number;
+}
+
+export interface DepartmentStats {
+  processed_today: number;
+  average_seconds: number | null;
+  flags_raised: number;
+  pending_now: number;
+  officers: number;
+}
+
+export interface AuditRow {
+  sequence: number;
+  action: string;
+  actor_user_id: number | null;
+  actor_role: string | null;
+  document_id: number | null;
+  detail_json: string;
+  created_at: string;
+}
+
+export interface AuditPage {
+  rows: AuditRow[];
+  total: number;
+  chain_intact: boolean;
+}
+
+export function getDepartment() {
+  return request<Department>('/department');
+}
+
+export function getStats() {
+  return request<DepartmentStats>('/department/stats');
+}
+
+export function listOfficers() {
+  return request<Officer[]>('/department/officers');
+}
+
+export function createOfficer(body: {
+  mobile_number: string;
+  full_name: string;
+  password: string;
+}) {
+  return request<Officer>('/department/officers', {
+    method: 'POST',
+    body: JSON.stringify(body)
+  });
+}
+
+export function setOfficerActive(id: number, isActive: boolean) {
+  return request<Officer>(`/department/officers/${id}/active`, {
+    method: 'POST',
+    body: JSON.stringify({is_active: isActive})
+  });
+}
+
+export function getAudit(limit = 50, offset = 0) {
+  return request<AuditPage>(`/department/audit?limit=${limit}&offset=${offset}`);
+}
+
+export function reassign(documentId: number, assignedTo: number) {
+  return request<{code: string}>(`/department/documents/${documentId}/assign`, {
+    method: 'POST',
+    body: JSON.stringify({assigned_to: assignedTo})
+  });
+}
+
+export function getProvider() {
+  return request<{provider: string}>('/department/provider');
+}
+
+export function setProvider(provider: string) {
+  return request<{provider: string}>('/department/provider', {
+    method: 'POST',
+    body: JSON.stringify({provider})
+  });
+}
+
+export function supersede(
+  documentId: number,
+  decision: 'approved' | 'rejected',
+  reason: string,
+  overrideNote?: string
+) {
+  return request<DocumentDetail>(`/documents/${documentId}/supersede`, {
+    method: 'POST',
+    body: JSON.stringify({decision, reason, override_note: overrideNote})
+  });
+}
+
 export function decide(
   id: number,
   decision: 'approved' | 'rejected',

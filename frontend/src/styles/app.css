@@ -386,3 +386,14 @@
   font-weight: var(--ux4g-font-weight-semibold);
   white-space: nowrap;
 }
+
+/* The four numbers on the dashboard.
+
+   GAP: UX4G ships Card but no stat-tile or equalised row of them. Grid only —
+   the cards themselves are ux4g-card, and every gap is a UX4G token. Wraps to
+   two and then one column rather than shrinking below readability. */
+.sutradhar-stat-row {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(13rem, 1fr));
+  gap: var(--ux4g-gap-column-m, var(--ux4g-padding-m));
+}

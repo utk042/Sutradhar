@@ -11,12 +11,15 @@ The system prepares the decision. It never makes it.
 
 ---
 
-## Status: Phase 4 complete
+## Status: Phase 5, with a hierarchy
 
 A document is uploaded, read, checked by three specialists running together, and
 held for a person, who decides — watching the checks as they run and seeing every
-verdict marked on the document itself. The guarantees behind that are now
-executable: 66 tests that each fail when the thing they protect is broken.
+verdict marked on the page of the document itself.
+
+Officers work in a department under a head, who runs that office and only that
+office. The guarantees behind all of it are executable: 108 tests that each fail
+when the thing they protect is broken.
 
 **Working now**
 
@@ -38,11 +41,50 @@ executable: 66 tests that each fail when the thing they protect is broken.
 - Append-only audit log with a hash chain, verified to detect tampering
 - English and Hindi, every user-facing string in the locale files
 - Keyboard operation and screen-reader labelling throughout
+- Departments: an officer sees their own desk, a head sees their own office, and
+  nobody sees another department's files
+- A head can add officers, suspend and restore access, move a pending file to
+  another desk, read the office's audit trail, choose where documents are read,
+  and supersede a decision — as a new record, never an edit
+- A dashboard with the office's numbers, its people and its history
 - The guarantees under test: read-only isolation, the review gate, the audit
-  chain, role enforcement and upload safety
+  chain, department isolation, role enforcement and upload safety
 
-**Not built yet** — the dept head dashboard, the model switcher and audit log
-export. Phase 5.
+**Not built yet** — audit log export, and the remaining 37 Hindi strings.
+
+## The hierarchy
+
+Two roles and a department each person belongs to.
+
+| | An officer | A head of department |
+|---|---|---|
+| Documents they see | their own desk | every desk in their office |
+| Decide a document | yes | yes |
+| Supersede a decision | no | in their own office |
+| Add or suspend officers | no | in their own office |
+| Move a file to another desk | no | in their own office, while it is undecided |
+| Read the audit trail | no | their own office's |
+| Another department | never | never |
+
+A document belonging to another department answers **404, not 403**. A 403 would
+confirm it exists, which tells one office something about another's caseload.
+
+The boundary is applied in every query rather than checked once at the door,
+through `app/api/scope.py`. Two structural tests hold that in place: no route
+module may query a document without the scope, and none may load one by primary
+key. Both were verified by bypassing them deliberately.
+
+### Decisions are never edited
+
+A head superseding an officer's decision writes a **new row** and marks the old
+one. The original stays, attributed to whoever made it, and both appear in the
+audit log. Three decisions in a row leave three rows. Superseding always needs a
+reason — unlike an ordinary rejection — because it overrules a colleague, and
+the record should say why.
+
+Suspending an officer removes nothing they did. Their decisions and audit rows
+stay, still theirs. The role guard re-reads `is_active` on every request, so it
+takes effect on their next one rather than at token expiry.
 
 ## The guarantees, as tests
 
@@ -56,6 +98,8 @@ export. Phase 5.
 | `test_review_gate.py` | One route, and only one, can write a decision |
 | `test_audit_chain.py` | The log is append-only and tamper-evident |
 | `test_roles.py` | The role comes from the database, never from the token |
+| `test_department_scope.py` | One office cannot see another's files |
+| `test_department_management.py` | A head runs their own office, and only their own |
 | `test_upload_safety.py` | Uploads are judged on their bytes; document text is data |
 | `test_parallel_execution.py` | The three checks run together |
 
@@ -426,6 +470,29 @@ Sutradhar is a product built with UX4G, not a government portal. It does not
 carry a national emblem, a ministry masthead, or a "Government of India"
 attribution, because it is a demonstration system and claiming otherwise would
 be untrue.
+
+## The marks are on the document
+
+The review screen shows the page an officer was actually sent, with each checked
+value outlined where it appears on it.
+
+pypdfium2 renders each page server-side and locates every checked value, stored
+as fractions of the page rather than pixels — a box in points is only meaningful
+beside the render scale that produced it, while a box in fractions is meaningful
+beside nothing, which is what a screen laying marks over an image of unknown
+displayed size needs. It also keeps a PDF library out of the frontend.
+
+Two checks can examine the same value and arrive with identical boxes. Drawn
+naively that is two marks stacked exactly on top of each other; they are grouped
+by position instead, one mark per place on the page showing the most serious
+verdict there.
+
+A scan carries no text layer and so no coordinates. Nothing invents them — the
+screen falls back to marking the text and says why.
+
+The zoom is there because A4 rendered into half of a 1366px screen puts
+certificate text at roughly eight points. The marks are positioned in
+percentages and follow the zoom without any arithmetic.
 
 ### The logo
 
