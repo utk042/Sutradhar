@@ -159,7 +159,7 @@
 
 @media (min-width: 1024px) {
   .sutradhar-review-split {
-    grid-template-columns: 3fr 4fr;
+    grid-template-columns: 5fr 4fr;
     gap: var(--ux4g-section-xs);
     align-items: start;
   }
@@ -296,5 +296,93 @@
   font-size: var(--ux4g-fs-11);
   font-weight: var(--ux4g-font-weight-semibold);
   text-decoration: none;
+  white-space: nowrap;
+}
+
+/* The document page, with marks drawn over it.
+
+   GAP: UX4G has no component for overlaying anything on an image. This is pure
+   positioning — the page is an image and each mark is a button placed over it
+   in percentages, so the marks stay put at any width without the browser
+   knowing anything about PDFs.
+
+   Status is carried by the written label inside each mark and by a different
+   border style per status, so the marks remain distinguishable in greyscale.
+   Colours and spacing are UX4G tokens. */
+/* The page scrolls inside its pane when zoomed past fitting. The pane itself
+   never widens the page, so the screen still never scrolls sideways. */
+.sutradhar-page-scroll {
+  overflow: auto;
+  max-width: 100%;
+  max-height: 70vh;
+}
+
+.sutradhar-page-frame {
+  position: relative;
+  border: var(--ux4g-border-width-sm) solid var(--ux4g-border-color-neutral-subtle);
+  border-radius: var(--ux4g-radius-md);
+  overflow: hidden;
+  background-color: var(--ux4g-bg-neutral-elevated);
+}
+
+.sutradhar-page-image {
+  display: block;
+  max-width: 100%;
+  height: auto;
+}
+
+.sutradhar-page-mark {
+  position: absolute;
+  padding: 0;
+  background: none;
+  cursor: pointer;
+  /* The box is the height of the text itself, which is a small target. Grown
+     slightly so it clears the 44px minimum more often, and outlined rather than
+     filled so the document stays readable underneath. */
+  min-height: var(--ux4g-space-6);
+  border: var(--ux4g-border-width-md) solid currentColor;
+  border-radius: var(--ux4g-radius-xs);
+}
+
+.sutradhar-page-mark:focus-visible {
+  outline: var(--ux4g-border-width-md) solid var(--ux4g-text-brand-primary-default);
+  outline-offset: 3px;
+}
+
+.sutradhar-page-mark[data-status='verified'] {
+  color: var(--ux4g-border-color-success-strong);
+  border-style: solid;
+}
+
+.sutradhar-page-mark[data-status='mismatch'] {
+  color: var(--ux4g-border-color-error-strong);
+  border-style: double;
+  border-width: var(--ux4g-border-width-lg);
+}
+
+.sutradhar-page-mark[data-status='unverifiable'] {
+  color: var(--ux4g-border-color-warning-strong);
+  border-style: dashed;
+}
+
+.sutradhar-page-mark[aria-pressed='true'] {
+  background-color: var(--ux4g-bg-primary-subtle);
+  outline: var(--ux4g-border-width-md) solid var(--ux4g-text-brand-primary-default);
+  outline-offset: 2px;
+}
+
+/* The verdict, written beside its mark rather than only implied by the border. */
+.sutradhar-page-mark-label {
+  position: absolute;
+  left: 100%;
+  top: 50%;
+  transform: translateY(-50%);
+  margin-inline-start: var(--ux4g-margin-2xs);
+  padding: 0 var(--ux4g-padding-3xs);
+  border-radius: var(--ux4g-radius-xs);
+  background-color: var(--ux4g-bg-neutral-elevated);
+  color: currentColor;
+  font-size: var(--ux4g-fs-11);
+  font-weight: var(--ux4g-font-weight-semibold);
   white-space: nowrap;
 }

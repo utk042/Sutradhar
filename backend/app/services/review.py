@@ -27,7 +27,7 @@ from app.providers.base import ProviderUnavailable
 from app.providers.records import SeededRecordsProvider, SeededRulesProvider
 from app.providers.registry import get_provider
 from app.schemas.finding import CheckResult, Finding
-from app.services import audit, storage
+from app.services import audit, pages, storage
 from app.services.events import ProgressEvent, broker
 from app.services.extraction import extract_document
 
@@ -75,6 +75,9 @@ async def run_checks_for_document(session: Session, document: Document) -> None:
     results: list[CheckResult] = []
     extracted: dict[str, str] = {}
     raw_text = ""
+    #: The document's bytes, kept so the page boxes can be worked out after the
+    #: checks. None when it could not be read, which the fallback below handles.
+    data: bytes | None = None
 
     try:
         data = storage.read_stored(document.stored_filename)
@@ -84,6 +87,8 @@ async def run_checks_for_document(session: Session, document: Document) -> None:
         )
         logger.info("document %s read via %s, %d fields", document.id, method, len(extracted))
         document.extracted_text = raw_text
+        if document.mime_type == "application/pdf":
+            document.page_count = pages.page_count(data)
 
         # The checks' only database access. Each one opens its own read-only
         # session, on its own thread — a session cannot be shared across
@@ -159,7 +164,7 @@ async def run_checks_for_document(session: Session, document: Document) -> None:
         session.commit()
         return
 
-    _persist(session, document, results, extracted)
+    _persist(session, document, results, extracted, document_bytes=data)
 
 
 def _persist(
@@ -167,8 +172,27 @@ def _persist(
     document: Document,
     results: list[CheckResult],
     extracted: dict[str, str],
+    document_bytes: bytes | None = None,
 ) -> None:
     from app.models.document import ExtractedField
+
+    # Where each checked value sits on the page, so the review screen can mark
+    # the document itself rather than a transcription of it. A scan carries no
+    # text layer and so no coordinates; those findings simply have no box, and
+    # the screen falls back to the text with a note saying why.
+    boxes = {}
+    if document_bytes and document.mime_type == "application/pdf":
+        wanted = [
+            (f.document_value or "").strip()
+            for r in results
+            for f in r.findings
+            if f.document_value
+        ]
+        boxes = pages.locate_values(document_bytes, wanted)
+        logger.info(
+            "document %s: located %d of %d checked values on the page",
+            document.id, len(boxes), len(set(wanted)),
+        )
 
     for field_name, value in extracted.items():
         session.add(
@@ -194,6 +218,7 @@ def _persist(
         session.flush()  # need run.id for the findings below
 
         for finding in result.findings:
+            box = boxes.get((finding.document_value or "").strip())
             session.add(
                 FindingRow(
                     document_id=document.id,
@@ -207,6 +232,11 @@ def _persist(
                     reference_source=finding.reference_source,
                     explanation_en=finding.explanation_en,
                     confidence=finding.confidence,
+                    page_number=box.page_number if box else None,
+                    box_left=box.left if box else None,
+                    box_top=box.top if box else None,
+                    box_width=box.width if box else None,
+                    box_height=box.height if box else None,
                 )
             )
 

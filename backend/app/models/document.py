@@ -54,6 +54,10 @@ class Document(Base):
     #: document with each checked value marked in place. No new exposure: this is
     #: the same content as the stored file, which is already held.
     extracted_text: Mapped[str | None] = mapped_column(Text, default=None)
+    #: How many pages can be rendered. Worked out once when the checks run, so
+    #: that opening a document does not re-read it off disk every time — which
+    #: for a ten megabyte scan is real I/O on a hot path.
+    page_count: Mapped[int] = mapped_column(Integer, default=0)
 
     uploaded_by: Mapped[int] = mapped_column(ForeignKey("users.id"))
     #: Taken from the uploader at creation. Kept on the row rather than joined

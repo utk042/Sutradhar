@@ -105,6 +105,11 @@ export interface Finding {
   reference_source: string;
   explanation_en: string;
   confidence: number;
+  page_number: number | null;
+  box_left: number | null;
+  box_top: number | null;
+  box_width: number | null;
+  box_height: number | null;
 }
 
 export interface CheckRun {
@@ -121,6 +126,8 @@ export interface DocumentDetail extends DocumentSummary {
   checks: CheckRun[];
   extracted: Record<string, string>;
   extracted_text: string | null;
+  /** How many pages can be rendered. Zero for anything that is not a PDF. */
+  page_count: number;
   has_blocking: boolean;
   reviewed_at: string | null;
   decision_reason: string | null;
@@ -138,6 +145,11 @@ export function getDocument(id: number) {
 /** The document file's URL. Addressed by ID — never by a path. */
 export function documentFileUrl(id: number) {
   return `${BASE_URL}/documents/${id}/file`;
+}
+
+/** One page of the document, rendered as an image. */
+export function documentPageUrl(id: number, page: number) {
+  return `${BASE_URL}/documents/${id}/page/${page}`;
 }
 
 export async function uploadDocument(file: File): Promise<ApiResult<DocumentSummary>> {

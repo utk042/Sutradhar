@@ -33,6 +33,15 @@ class FindingOut(BaseModel):
     explanation_en: str
     confidence: float
 
+    #: Where this value sits on the document, as fractions of the page. Null when
+    #: it could not be located — a scan with no text layer, or a finding about
+    #: the document as a whole rather than one value in it.
+    page_number: int | None = None
+    box_left: float | None = None
+    box_top: float | None = None
+    box_width: float | None = None
+    box_height: float | None = None
+
 
 class CheckRunOut(BaseModel):
     """Exposed so the parallelism claim is checkable, not just asserted."""
@@ -51,8 +60,12 @@ class DocumentDetail(DocumentSummary):
     findings: list[FindingOut]
     checks: list[CheckRunOut]
     extracted: dict[str, str]
-    #: The document's text, so the review screen can mark checked values in place.
+    #: The document's text, so the review screen can fall back to marking it
+    #: when the page itself cannot be marked.
     extracted_text: str | None = None
+    #: How many pages can be rendered. Zero for anything that is not a PDF, and
+    #: the signal the screen uses to choose between the page view and the text.
+    page_count: int = 0
     #: True when at least one finding is blocking, so the screen can require an
     #: override note before approval.
     has_blocking: bool

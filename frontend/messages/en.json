@@ -112,8 +112,20 @@
     "progressTitle": "What is happening",
     "connectionLost": "The live update stopped. The page will still show the result.",
     "annotationHint": "Values the checks looked at are marked in the document below. Select one to see the evidence behind it.",
-    "documentText": "The document, with the checks marked",
-    "fromCheck": "From: {check}"
+    "documentText": "The text read from the document, with the checks marked",
+    "fromCheck": "From: {check}",
+    "pageAlt": "Page {page} of {total} of the uploaded document",
+    "pageNav": "Document pages",
+    "pageOf": "Page {page} of {total}",
+    "previousPage": "Previous page",
+    "nextPage": "Next page",
+    "documentPage": "The document, with the checks marked",
+    "textFallback": "This document could not be shown as a page, so the text read from it is marked instead.",
+    "zoom": "Size",
+    "zoomIn": "Larger",
+    "zoomOut": "Smaller",
+    "zoomFit": "Whole page",
+    "zoomLevel": "{percent}%"
   },
   "finding": {
     "verified": "Verified",

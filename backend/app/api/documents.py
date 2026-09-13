@@ -18,7 +18,7 @@ from app.db.app import get_app_session
 from app.models.document import Document, ExtractedField
 from app.models.finding import AgentRun, Finding as FindingRow
 from app.schemas.document import CheckRunOut, DocumentDetail, DocumentSummary, FindingOut
-from app.services import audit, storage
+from app.services import audit, pages, storage
 from app.services.review import run_checks_in_background
 
 router = APIRouter(prefix="/documents", tags=["documents"])
@@ -109,6 +109,7 @@ def _load_detail(session: Session, user, document_id: int) -> DocumentDetail:
         checks=[CheckRunOut.model_validate(c) for c in checks],
         extracted={r.field_name: r.field_value or "" for r in extracted_rows},
         extracted_text=document.extracted_text,
+        page_count=document.page_count,
         has_blocking=any(f.severity == "blocking" for f in findings),
         reviewed_at=document.reviewed_at,
         decision_reason=document.decision_reason,
@@ -123,6 +124,44 @@ def get_document(
     session: Annotated[Session, Depends(get_app_session)],
 ) -> DocumentDetail:
     return _load_detail(session, user, document_id)
+
+
+@router.get("/{document_id}/page/{page_number}")
+def get_document_page(
+    document_id: int,
+    page_number: int,
+    user: CurrentUserDep,
+    session: Annotated[Session, Depends(get_app_session)],
+) -> Response:
+    """One page of the document, rendered as an image.
+
+    The review screen draws its marks over this, so an officer sees the
+    document they were sent rather than a transcription of it. Rendered here
+    rather than in the browser: it keeps a PDF rendering library out of the
+    frontend, and the page is the same image for everyone who opens it.
+    """
+    document = load_visible_document(session, user, document_id)
+    if document.mime_type != "application/pdf":
+        raise HTTPException(status.HTTP_404_NOT_FOUND, detail="page_not_available")
+
+    try:
+        data = storage.read_stored(document.stored_filename)
+    except (storage.UploadRejected, OSError):
+        raise HTTPException(status.HTTP_404_NOT_FOUND, detail="document_not_found") from None
+
+    image = pages.render_page(data, page_number)
+    if image is None:
+        raise HTTPException(status.HTTP_404_NOT_FOUND, detail="page_not_available")
+
+    return Response(
+        content=image,
+        media_type="image/png",
+        headers={
+            "X-Content-Type-Options": "nosniff",
+            # Citizen data: never cached by anything shared.
+            "Cache-Control": "private, no-store",
+        },
+    )
 
 
 @router.get("/{document_id}/file")

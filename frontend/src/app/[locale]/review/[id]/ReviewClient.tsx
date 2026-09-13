@@ -4,6 +4,7 @@ import {useCallback, useEffect, useId, useState} from 'react';
 import {useFormatter, useTranslations} from 'next-intl';
 import {useRouter} from '@/i18n/routing';
 import AnnotatedDocument from '@/components/AnnotatedDocument';
+import AnnotatedPage from '@/components/AnnotatedPage';
 import CheckProgressPanel from '@/components/CheckProgressPanel';
 import FindingCard from '@/components/FindingCard';
 import {fieldLabel} from '@/lib/fieldLabel';
@@ -52,6 +53,16 @@ export default function ReviewClient({documentId}: {documentId: number}) {
   //: Which finding's evidence is open. Shared between the document's marks and
   //: the findings list, so selecting either reveals the same thing.
   const [selectedFinding, setSelectedFinding] = useState<number | null>(null);
+
+  // Selecting a mark on the document opens that finding's evidence and brings
+  // it into view, so the two halves of the screen stay in step.
+  const selectFinding = useCallback((id: number) => {
+    setSelectedFinding((current) => (current === id ? null : id));
+    document.getElementById(`finding-${id}`)?.scrollIntoView({
+      behavior: 'smooth',
+      block: 'center'
+    });
+  }, []);
   const [error, setError] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState<null | 'approved' | 'rejected'>(null);
   const [mode, setMode] = useState<null | 'reject' | 'override'>(null);
@@ -169,23 +180,41 @@ export default function ReviewClient({documentId}: {documentId: number}) {
             </div>
           </div>
 
-          {doc.extracted_text && doc.findings.length > 0 && (
+          {/* The document itself where it can be rendered; the text it was read
+              from where it cannot — a scan with no text layer, or anything that
+              is not a PDF. The fallback says so rather than looking like a
+              choice. */}
+          {doc.page_count > 0 && doc.findings.length > 0 ? (
             <div className="ux4g-card ux4g-card-outline ux4g-mb-s">
               <div className="ux4g-card-body">
-                <h3 className="ux4g-heading-xs-strong ux4g-mb-xs">{t('documentText')}</h3>
-                <AnnotatedDocument
-                  text={doc.extracted_text}
+                <h3 className="ux4g-heading-xs-strong ux4g-mb-xs">{t('documentPage')}</h3>
+                <AnnotatedPage
+                  documentId={doc.id}
+                  pageCount={doc.page_count}
                   findings={doc.findings}
                   selectedId={selectedFinding}
-                  onSelect={(id) => {
-                    setSelectedFinding((current) => (current === id ? null : id));
-                    document
-                      .getElementById(`finding-${id}`)
-                      ?.scrollIntoView({behavior: 'smooth', block: 'center'});
-                  }}
+                  onSelect={selectFinding}
                 />
               </div>
             </div>
+          ) : (
+            doc.extracted_text &&
+            doc.findings.length > 0 && (
+              <div className="ux4g-card ux4g-card-outline ux4g-mb-s">
+                <div className="ux4g-card-body">
+                  <h3 className="ux4g-heading-xs-strong ux4g-mb-xs">{t('documentText')}</h3>
+                  <p className="ux4g-body-s-default ux4g-text-neutral-secondary ux4g-mb-s">
+                    {t('textFallback')}
+                  </p>
+                  <AnnotatedDocument
+                    text={doc.extracted_text}
+                    findings={doc.findings}
+                    selectedId={selectedFinding}
+                    onSelect={selectFinding}
+                  />
+                </div>
+              </div>
+            )
           )}
 
           {Object.keys(doc.extracted).length > 0 && (
