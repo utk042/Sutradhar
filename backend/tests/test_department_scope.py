@@ -143,3 +143,48 @@ def test_an_uploaded_document_takes_its_uploader_s_department(officer, sample_pd
         assert document.department_id == uploader.department_id
         # And it starts on the uploader's own desk.
         assert document.assigned_to == uploader.id
+
+
+def test_an_officers_own_screen_counts_only_their_own_desk(
+    officer, second_officer_same_department, reviewed_document
+):
+    """The numbers are per desk, not per office.
+
+    Same department, so the department boundary is not what is being tested
+    here: the file is on one officer's desk and must not appear in the other
+    officer's counts. `/api/work` is narrowed by `visible_documents`, which for
+    an officer already means "assigned to me".
+    """
+    mine = officer.get("/api/work").json()
+    theirs = second_officer_same_department.get("/api/work").json()
+
+    assert mine["pending_now"] == 1
+    assert theirs["pending_now"] == 0
+    assert theirs["recent"] == []
+
+
+def test_another_department_is_absent_from_the_officer_screen(
+    other_officer, reviewed_document
+):
+    summary = other_officer.get("/api/work").json()
+    assert summary["pending_now"] == 0
+    assert summary["flags_waiting"] == 0
+    assert summary["recent"] == []
+
+
+def test_a_decided_file_shows_on_the_deciders_own_screen(officer, reviewed_document):
+    officer.post(
+        f"/api/documents/{reviewed_document}/decision",
+        json={"decision": "approved", "override_note": "Checked against the register."},
+    )
+    summary = officer.get("/api/work").json()
+
+    assert summary["decided_today"] == 1
+    assert summary["decided_total"] == 1
+    assert summary["pending_now"] == 0
+    assert [row["id"] for row in summary["recent"]] == [reviewed_document]
+    assert summary["recent"][0]["status"] == "approved"
+
+
+def test_the_officer_screen_needs_a_session(anonymous):
+    assert anonymous.get("/api/work").status_code == 401

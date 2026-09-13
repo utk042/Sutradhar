@@ -222,6 +222,37 @@ export interface AuditPage {
   chain_intact: boolean;
 }
 
+// --- An officer's own work -------------------------------------------------
+
+export interface DecidedDocument {
+  id: number;
+  public_ref: string;
+  status: DocumentStatus;
+  reviewed_at: string | null;
+}
+
+export interface WorkSummary {
+  pending_now: number;
+  decided_today: number;
+  decided_total: number;
+  average_seconds: number | null;
+  flags_waiting: number;
+  recent: DecidedDocument[];
+}
+
+/**
+ * What is on this officer's desk, and what they have decided.
+ *
+ * Scoped on the server by the same rule as every other document route — an
+ * officer's own desk, a head's whole department — so there is nothing to pass
+ * and nothing the browser could widen.
+ */
+export function getMyWork() {
+  return request<WorkSummary>('/work');
+}
+
+// --- Managing a department -------------------------------------------------
+
 export function getDepartment() {
   return request<Department>('/department');
 }

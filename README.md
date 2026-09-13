@@ -423,13 +423,15 @@ backend/
     db/          readonly.py (mode=ro) · app.py (read-write)
     models/      the nine tables
     schemas/     Pydantic v2 request/response types
-    api/         auth · health  (review, documents, stream: later phases)
+    api/         auth · health · documents · review · stream ·
+                 management (a head's office) · work (an officer's own desk)
     services/    security (Argon2id, JWT)
   alembic/       migrations
   scripts/seed.py
 frontend/
   messages/      en.json · hi.json
-  src/app/[locale]/    layout · login · home
+  src/app/[locale]/    layout · login · home · review · settings ·
+                       dashboard (officer's work / head's office)
   src/components/      Logo · Ux4gRuntime · SiteNav · Breadcrumb ·
                        DocumentPicker · TableScroll · AuthArtwork
   src/lib/api.ts
@@ -585,6 +587,40 @@ Sutradhar is a product built with UX4G, not a government portal. It does not
 carry a national emblem, a ministry masthead, or a "Government of India"
 attribution, because it is a demonstration system and claiming otherwise would
 be untrue.
+
+## Two dashboards, one address
+
+`/dashboard` renders one of two screens depending on who is asking.
+
+A **head of department** gets the office: the numbers for everybody, the roster,
+the audit trail and the model switch — unchanged.
+
+An **officer** gets their own desk counted: what is waiting for them, how many
+files they decided in the last day, how long they take on average, and how many
+things the checks have flagged on files still waiting. Below that, the last ten
+decisions they made, each linking to its record. The four numbers are the ones an
+officer can act on — "flagged" counts only undecided files, because a lifetime
+total of everything the checks ever raised is a number nobody can do anything
+about this morning.
+
+Two addresses would have meant two links in the navigation bar and each role
+having to learn where the other's screen lives. One address means the bar carries
+a single link; only its wording changes, because "Your office" would be a promise
+the officer's screen does not keep.
+
+**The scope is the server's, not the screen's.** `GET /api/work` is narrowed by
+`scope.visible_documents`, the same helper every other document route uses, which
+already means "assigned to me, in my department" for an officer. There is nothing
+to pass and nothing the browser could widen; `tests/test_department_scope.py`
+asserts this module goes through that helper and that one officer's numbers never
+include a colleague's desk.
+
+This screen is deliberately **not** the desk. `CLAUDE.md` asks for one action on
+the officer's home screen and the list of files waiting, and that is what it
+still is: a row of figures above the only button on the page competes with it,
+and the officers this is built for are the ones least helped by two things asking
+for attention at once. The numbers are one click away instead, from the
+navigation bar on every page.
 
 ## Getting around, at every screen size
 

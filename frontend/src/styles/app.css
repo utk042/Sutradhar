@@ -679,3 +679,32 @@ body {
   width: 100%;
   max-width: 38rem;
 }
+
+/* ---------------------------------------------------------------------------
+   The officer's list of what they decided.
+
+   GAP: UX4G ships Card but nothing that stacks cards with a consistent gap, and
+   nothing that puts a body of text beside an action inside one. Layout only —
+   the cards are `ux4g-card`, and every gap is a UX4G token. The row goes to one
+   column on a narrow screen rather than squeezing the link against the text.
+   --------------------------------------------------------------------------- */
+.sutradhar-decision-list {
+  display: grid;
+  gap: var(--ux4g-gap-row-s);
+}
+
+.sutradhar-decision-row {
+  display: flex;
+  flex-direction: column;
+  gap: var(--ux4g-gap-row-xs);
+  align-items: flex-start;
+}
+
+@media (min-width: 640px) {
+  .sutradhar-decision-row {
+    flex-direction: row;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--ux4g-gap-column-m);
+  }
+}

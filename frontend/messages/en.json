@@ -263,7 +263,8 @@
     "menu": "Menu",
     "closeMenu": "Close",
     "breadcrumb": "Where you are",
-    "primary": "Service navigation"
+    "primary": "Service navigation",
+    "work": "Your work"
   },
   "settings": {
     "title": "Settings",
@@ -281,5 +282,20 @@
   },
   "table": {
     "scrollHint": "Slide this table sideways to see the rest of it."
+  },
+  "work": {
+    "title": "Your work",
+    "subtitle": "What is waiting for you, and what you have decided.",
+    "statPending": "Waiting for your decision",
+    "statDecidedToday": "You decided in the last day",
+    "statAverage": "Your average time to a decision",
+    "statFlags": "Flagged on files waiting for you",
+    "goToWaiting": "{count, plural, one {Go to the file waiting for you} other {Go to the # files waiting for you}}",
+    "recentTitle": "What you decided recently",
+    "recentEmptyTitle": "Nothing decided yet",
+    "recentEmptyBody": "Once you approve or reject a file it will be listed here, with the record of what you decided.",
+    "openDecision": "See the record",
+    "decidedTotal": "{count, plural, =0 {You have not decided any files yet.} one {You have decided one file in all.} other {You have decided # files in all.}}",
+    "loadFailed": "Your numbers could not be loaded just now. Your files are unaffected — open your desk to carry on, and try this screen again in a moment."
   }
 }

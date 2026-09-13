@@ -1,109 +1,45 @@
 'use client';
 
-import {useCallback, useEffect, useState} from 'react';
-import {useFormatter, useTranslations} from 'next-intl';
+import {useEffect, useState} from 'react';
 import {useRouter} from '@/i18n/routing';
-import Breadcrumb from '@/components/Breadcrumb';
-import OfficerRoster from '@/components/OfficerRoster';
-import DepartmentAudit from '@/components/DepartmentAudit';
-import {
-  getDepartment,
-  getStats,
-  me,
-  type Department,
-  type DepartmentStats
-} from '@/lib/api';
+import DepartmentDashboard from './DepartmentDashboard';
+import OfficerWork from './OfficerWork';
+import {me} from '@/lib/api';
 
 /**
- * The head of department's screen.
+ * One address, two screens.
  *
- * Three numbers, the people, and the record. Nothing here decides anything —
- * this is oversight, and the things that change something (adding an officer,
- * suspending one, moving a file) each say plainly what they will do.
+ * A head of department gets the office: the numbers for everybody, the roster,
+ * the audit trail, the model switch. An officer gets their own desk counted —
+ * what is waiting for them, what they decided, how long they take — and none of
+ * the office-wide things, which the server refuses them in any case.
  *
- * An officer who reaches this URL is sent back to their desk rather than shown
- * an error: the server refuses them anyway, and being told off for opening a
- * page you cannot use is not useful.
+ * Both live at `/dashboard` rather than at two addresses, so the navigation bar
+ * carries one link and neither role has to learn where the other's screen is.
+ * The label on that link differs; the place it goes does not.
+ *
+ * The role is asked of the server. It is not in anything the browser can read —
+ * the session is an httpOnly cookie — and even if it were, choosing a screen
+ * from a client-held claim is choosing a screen from something the client could
+ * change. Nothing here is a permission check: it decides which of two screens to
+ * draw, and every route behind either one re-checks the role for itself.
  */
 export default function DashboardClient() {
-  const t = useTranslations('dashboard');
-  const tn = useTranslations('nav');
-  const format = useFormatter();
   const router = useRouter();
-
-  const [department, setDepartment] = useState<Department | null>(null);
-  const [stats, setStats] = useState<DepartmentStats | null>(null);
-
-  const load = useCallback(async () => {
-    const [dept, numbers] = await Promise.all([getDepartment(), getStats()]);
-    if (dept.ok) setDepartment(dept.data);
-    if (numbers.ok) setStats(numbers.data);
-  }, []);
+  const [role, setRole] = useState<'officer' | 'dept_head' | null>(null);
 
   useEffect(() => {
     let active = true;
     me().then((who) => {
       if (!active) return;
-      if (!who.ok) {
-        router.replace('/login');
-      } else if (who.data.role !== 'dept_head') {
-        router.replace('/');
-      } else {
-        load();
-      }
+      if (who.ok) setRole(who.data.role);
+      else router.replace('/login');
     });
     return () => {
       active = false;
     };
-  }, [router, load]);
+  }, [router]);
 
-  if (department === null) return null;
-
-  const averageLabel =
-    stats?.average_seconds == null
-      ? t('noneYet')
-      : stats.average_seconds < 90
-        ? t('seconds', {value: Math.round(stats.average_seconds)})
-        : t('minutes', {value: Math.round(stats.average_seconds / 60)});
-
-  return (
-    <section className="sutradhar-page ux4g-p-l">
-      <Breadcrumb
-        label={tn('breadcrumb')}
-        items={[{label: tn('desk'), href: '/'}, {label: tn('dashboard')}]}
-      />
-      <h1 className="ux4g-heading-l-strong ux4g-mb-xs">
-        {t('title', {department: department.name})}
-      </h1>
-      <p className="ux4g-body-m-default ux4g-text-neutral-secondary ux4g-mb-l">
-        {t('subtitle')}
-      </p>
-
-      {/* The three numbers, plus what is waiting right now. */}
-      <div className="sutradhar-stat-row ux4g-mb-xl">
-        {[
-          {label: t('statProcessed'), value: String(stats?.processed_today ?? 0)},
-          {label: t('statAverage'), value: averageLabel},
-          {label: t('statFlags'), value: String(stats?.flags_raised ?? 0)},
-          {label: t('statPending'), value: String(stats?.pending_now ?? 0)}
-        ].map((stat) => (
-          <div key={stat.label} className="ux4g-card ux4g-card-solid">
-            <div className="ux4g-card-body">
-              <p className="ux4g-body-s-default ux4g-text-neutral-secondary ux4g-mb-xs">
-                {stat.label}
-              </p>
-              <p className="ux4g-heading-l-strong">{stat.value}</p>
-            </div>
-          </div>
-        ))}
-      </div>
-
-      <OfficerRoster onChanged={load} />
-      <DepartmentAudit />
-
-      <p className="ux4g-body-s-default ux4g-text-neutral-tertiary ux4g-mt-xl">
-        {format.dateTime(new Date(), {dateStyle: 'long', timeStyle: 'short'})}
-      </p>
-    </section>
-  );
+  if (role === null) return null;
+  return role === 'dept_head' ? <DepartmentDashboard /> : <OfficerWork />;
 }

@@ -145,9 +145,16 @@ export default function SiteNav() {
 
   if (who === null) return null;
 
+  // Both roles get the dashboard link; it goes to the same address and renders
+  // the screen that belongs to the caller. Only the wording differs, because
+  // "Your office" would be a promise the officer's screen does not keep — it
+  // shows their own desk counted, not anybody else's.
   const links = [
     {href: '/', label: t('desk')},
-    ...(who.role === 'dept_head' ? [{href: '/dashboard', label: t('dashboard')}] : []),
+    {
+      href: '/dashboard',
+      label: who.role === 'dept_head' ? t('dashboard') : t('work')
+    },
     {href: '/settings', label: ts('open')}
   ];
 
