@@ -65,9 +65,14 @@ console.log('    leaks a status code or jargon:',
 
 step(3, 'sign in using only the keyboard — the eye, the dropdown and all');
 await p.reload({waitUntil: 'networkidle'});
-await p.locator('input[type=tel]').focus();
+// Role first, then the number, then the password — the order the fields are in.
+await p.locator('select[name=role]').selectOption('officer');
+console.log('    a role was chosen:',
+  (await p.locator('select[name=role]').inputValue()) === 'officer');
+await p.locator('select[name=role]').focus();
+await p.keyboard.press('Tab');           // mobile number
 await p.keyboard.type(MOBILE);
-await p.keyboard.press('Tab');
+await p.keyboard.press('Tab');           // password
 await p.keyboard.type(PASSWORD);
 await p.keyboard.press('Tab');           // the eye in the password field
 await p.keyboard.press('Enter');
@@ -77,12 +82,7 @@ console.log('    and does not submit the form:', /login/.test(p.url()));
 await p.keyboard.press('Enter');         // and hides it again
 console.log('    and hides it again:',
   (await p.locator('input[name=password]').getAttribute('type')) === 'password');
-await p.keyboard.press('Tab');           // the role dropdown
-await p.locator('select[name=role]').selectOption('officer');
-await p.locator('select[name=role]').focus();
-console.log('    a role was chosen:',
-  (await p.locator('select[name=role]').inputValue()) === 'officer');
-await p.keyboard.press('Tab');
+await p.keyboard.press('Tab');           // Sign in
 await p.keyboard.press('Enter');
 await p.waitForURL(/\/en$/, {timeout: 8000});
 console.log('    landed on', new URL(p.url()).pathname, '—',

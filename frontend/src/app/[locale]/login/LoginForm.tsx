@@ -70,6 +70,11 @@ import {login, type DeclaredRole} from '@/lib/api';
  * Nothing is pre-selected. Two steps to sign in rather than one is the cost of
  * the choice being a real one, and a default that quietly works for most people
  * is how the head of department ends up seeing an error every morning.
+ *
+ * It is the first field, above the mobile number. That is the order the
+ * question is actually asked in at a counter — who are you here as, then who
+ * are you — and it means the officer has chosen before they start typing rather
+ * than meeting the question after they thought they were finished.
  */
 
 type FieldErrors = {mobile?: string; password?: string; role?: string};
@@ -140,6 +145,52 @@ export default function LoginForm() {
           <span className="ux4g-body-m-default">{formError}</span>
         </div>
       )}
+
+      <div
+        className={`ux4g-input-container ux4g-input-lg ${
+          fieldErrors.role ? 'ux4g-input-error' : 'ux4g-input-default'
+        } ux4g-mb-l`}
+      >
+        <label htmlFor={roleId}>{t('roleLabel')}</label>
+        <div className="ux4g-input">
+          <select
+            id={roleId}
+            name="role"
+            className="ux4g-input-input sutradhar-select"
+            value={role ?? ''}
+            onChange={(e) => setRole((e.target.value || null) as DeclaredRole | null)}
+            aria-invalid={fieldErrors.role ? true : undefined}
+            aria-describedby={fieldErrors.role ? roleErrorId : roleHintId}
+          >
+            {/* Empty and disabled, so nothing is chosen until the officer
+                chooses it. Kept in the list rather than hidden: on a phone the
+                native picker opens on the current value, and an option the
+                wheel can land on but not select is worse than one that simply
+                reads as the question. */}
+            <option value="" disabled>
+              {t('rolePlaceholder')}
+            </option>
+            {ROLES.map((option) => (
+              <option key={option} value={option}>
+                {t(`roles.${option}`)}
+              </option>
+            ))}
+          </select>
+          {/* Decorative: the control is already announced as a combo box. */}
+          <span className="ux4g-input-actions" aria-hidden="true">
+            <span className="ux4g-icon-outlined">expand_more</span>
+          </span>
+        </div>
+        {fieldErrors.role ? (
+          <span className="ux4g-input-helper" id={roleErrorId}>
+            {fieldErrors.role}
+          </span>
+        ) : (
+          <span className="ux4g-input-helper" id={roleHintId}>
+            {t('roleHint')}
+          </span>
+        )}
+      </div>
 
       <div
         className={`ux4g-input-container ux4g-input-lg ${
@@ -215,52 +266,6 @@ export default function LoginForm() {
         {fieldErrors.password && (
           <span className="ux4g-input-helper" id={passwordErrorId}>
             {fieldErrors.password}
-          </span>
-        )}
-      </div>
-
-      <div
-        className={`ux4g-input-container ux4g-input-lg ${
-          fieldErrors.role ? 'ux4g-input-error' : 'ux4g-input-default'
-        } ux4g-mb-xl`}
-      >
-        <label htmlFor={roleId}>{t('roleLabel')}</label>
-        <div className="ux4g-input">
-          <select
-            id={roleId}
-            name="role"
-            className="ux4g-input-input sutradhar-select"
-            value={role ?? ''}
-            onChange={(e) => setRole((e.target.value || null) as DeclaredRole | null)}
-            aria-invalid={fieldErrors.role ? true : undefined}
-            aria-describedby={fieldErrors.role ? roleErrorId : roleHintId}
-          >
-            {/* Empty and disabled, so nothing is chosen until the officer
-                chooses it. Kept in the list rather than hidden: on a phone the
-                native picker opens on the current value, and an option the
-                wheel can land on but not select is worse than one that simply
-                reads as the question. */}
-            <option value="" disabled>
-              {t('rolePlaceholder')}
-            </option>
-            {ROLES.map((option) => (
-              <option key={option} value={option}>
-                {t(`roles.${option}`)}
-              </option>
-            ))}
-          </select>
-          {/* Decorative: the control is already announced as a combo box. */}
-          <span className="ux4g-input-actions" aria-hidden="true">
-            <span className="ux4g-icon-outlined">expand_more</span>
-          </span>
-        </div>
-        {fieldErrors.role ? (
-          <span className="ux4g-input-helper" id={roleErrorId}>
-            {fieldErrors.role}
-          </span>
-        ) : (
-          <span className="ux4g-input-helper" id={roleHintId}>
-            {t('roleHint')}
           </span>
         )}
       </div>

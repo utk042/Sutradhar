@@ -308,5 +308,18 @@
     "openDecision": "See the record",
     "decidedTotal": "{count, plural, =0 {You have not decided any files yet.} one {You have decided one file in all.} other {You have decided # files in all.}}",
     "loadFailed": "Your numbers could not be loaded just now. Your files are unaffected — open your desk to carry on, and try this screen again in a moment."
+  },
+  "charts": {
+    "decisionsTitle": "Decisions this week",
+    "decisionsSubtitle": "{count, plural, =0 {Nothing decided in the last seven days.} one {One decision in the last seven days.} other {# decisions in the last seven days.}}",
+    "decisionsEmpty": "Nothing has been decided in the last seven days. Days appear here as decisions are made.",
+    "findingsTitle": "What the checks found",
+    "findingsSubtitle": "{count, plural, =0 {Nothing checked yet.} one {One thing the checks looked at.} other {# things the checks looked at.}}",
+    "findingsEmpty": "Nothing has been checked yet. Results appear here once a document has been through the checks.",
+    "showTable": "Show these numbers as a table",
+    "colDay": "Day",
+    "colDecided": "Decisions",
+    "colResult": "Result",
+    "colCount": "How many"
   }
 }

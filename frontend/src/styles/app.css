@@ -420,8 +420,7 @@
 .sutradhar-auth-split {
   display: grid;
   grid-template-columns: 1fr;
-  gap: var(--ux4g-section-xs);
-  align-items: center;
+  align-items: stretch;
 }
 
 /* Two columns only once there is room for a readable form beside the picture.
@@ -430,18 +429,23 @@
 @media (min-width: 1024px) {
   .sutradhar-auth-split {
     grid-template-columns: 1fr 1fr;
-    gap: var(--ux4g-section-s);
+    gap: 0;
   }
+}
 
-  .sutradhar-auth-visual {
-    grid-column: 1;
-    grid-row: 1;
-  }
+/* No `grid-row` or `order` anywhere in this layout, deliberately. The
+   illustration is first in the markup and first on the screen at every width —
+   top on a phone, left on a desktop — so nothing a reader meets in one order is
+   presented to them in another. */
 
-  .sutradhar-auth-form {
-    grid-column: 2;
-    grid-row: 1;
-  }
+/* One box around the whole thing, at every width. The card clips the tinted
+   half to its own radius, so the two panels read as one object rather than as a
+   panel sitting on top of a card. */
+.sutradhar-auth-card {
+  width: 100%;
+  max-width: 62rem;
+  margin-inline: auto;
+  overflow: hidden;
 }
 
 /* The form keeps a readable measure even in half a wide screen. */
@@ -449,6 +453,10 @@
   width: 100%;
   max-width: 32rem;
   margin-inline: auto;
+  padding: var(--ux4g-padding-xl);
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
 }
 
 .sutradhar-auth-visual {
@@ -456,8 +464,8 @@
   flex-direction: column;
   align-items: center;
   gap: var(--ux4g-gap-row-m);
+  justify-content: center;
   padding: var(--ux4g-padding-xl);
-  border-radius: var(--ux4g-radius-lg);
   background-color: var(--ux4g-bg-primary);
   text-align: center;
 }
@@ -799,4 +807,298 @@ body {
 .sutradhar-select option {
   background-color: var(--ux4g-bg-neutral-elevated);
   color: var(--ux4g-text-neutral-primary);
+}
+
+/* ===========================================================================
+   Dashboards: tiles and charts.
+
+   GAP: UX4G ships Card, and nothing else needed here. It has no stat tile, no
+   chart, no bar and no column — and the brief rules out a charting library, so
+   every mark below is drawn in plain CSS. All of it is layout and geometry;
+   every colour, radius, spacing and type value is a UX4G token.
+
+   The colour decisions are recorded beside the components that use them. In
+   short: counts wear the brand hue because a count is neither good nor bad;
+   states wear UX4G's reserved `--ux4g-text-status-*` steps, which measure 9.4,
+   9.4 and 5.4 against a light card and 11.6, 11.6 and 13.1 against a dark one —
+   all past the 3:1 a mark needs. The `--ux4g-bg-*-strong` steps were the
+   obvious choice and were rejected: the warning one sits at 2.4:1 on white.
+
+   Status colour is never the only signal anywhere below. Every tile and every
+   bar carries its own words, and the two states that collapse under colour
+   blindness — the green and the red — are never drawn touching.
+   =========================================================================== */
+
+/* One tone per element, set once and consumed by the tile and the bars alike.
+   `--tone` is the mark colour; `--tone-wash` the track or tint behind it. */
+.sutradhar-tone-brand {
+  --tone: var(--ux4g-text-brand-primary-default);
+  --tone-wash: var(--ux4g-bg-primary);
+}
+
+.sutradhar-tone-success {
+  --tone: var(--ux4g-text-status-success);
+  --tone-wash: var(--ux4g-bg-success-subtle);
+}
+
+.sutradhar-tone-warning {
+  --tone: var(--ux4g-text-status-warning);
+  --tone-wash: var(--ux4g-bg-warning-subtle);
+}
+
+.sutradhar-tone-danger {
+  --tone: var(--ux4g-text-status-error);
+  --tone-wash: var(--ux4g-bg-error-subtle);
+}
+
+.sutradhar-tone-neutral {
+  --tone: var(--ux4g-text-neutral-secondary);
+  --tone-wash: var(--ux4g-bg-neutral-soft);
+}
+
+/* --- Stat tiles ---------------------------------------------------------- */
+
+/* A coloured rule down the leading edge rather than a coloured card: a filled
+   tile would make four of them shout at once and leave the figure competing
+   with its own background. The rule is 4px, which reads at a glance and stays
+   out of the way of the text. */
+.sutradhar-stat {
+  border-inline-start: var(--ux4g-border-width-xl) solid var(--tone);
+  height: 100%;
+}
+
+.sutradhar-stat-head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: var(--ux4g-gap-column-s);
+  margin-block-end: var(--ux4g-margin-2xs);
+}
+
+/* Paired with `.ux4g-icon-outlined`, whose bare rule in the shipped CSS sets
+   `color: var(--ux4g-text-neutral-inverse)` — near-white on a white card. Two
+   classes beat one, so the tone wins it back. */
+.sutradhar-stat-icon.ux4g-icon-outlined {
+  color: var(--tone);
+  font-size: var(--ux4g-fs-24);
+  height: var(--ux4g-size-24);
+  width: var(--ux4g-size-24);
+  flex-shrink: 0;
+}
+
+/* The figure. Proportional digits, not `tabular-nums`: equal-width digits make
+   a number like 121 look loose at this size. Tabular belongs in the table view,
+   where columns have to line up. */
+.sutradhar-stat-value {
+  margin: 0;
+  font-size: var(--ux4g-fs-32);
+  line-height: var(--ux4g-lh-36);
+  font-weight: var(--ux4g-font-weight-semibold);
+  color: var(--ux4g-text-neutral-primary);
+}
+
+/* --- The column chart ---------------------------------------------------- */
+
+.sutradhar-chart {
+  margin: 0;
+}
+
+.sutradhar-columns {
+  display: flex;
+  align-items: flex-end;
+  gap: var(--ux4g-gap-column-xs);
+}
+
+.sutradhar-column {
+  flex: 1 1 0;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--ux4g-gap-row-2xs);
+}
+
+/* The plot band. Fixed so every column shares one scale, and sized to hold the
+   bars only — the caps and the day names are siblings outside it, so the axis
+   band can never be the thing that gets cut off. */
+.sutradhar-column-track {
+  width: 100%;
+  height: 7.5rem;
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  /* The baseline: solid, hairline, one step off the surface. Never dashed. */
+  border-block-end: var(--ux4g-border-width-sm) solid var(--ux4g-border-color-neutral-default);
+}
+
+/* Thin marks. Capped at 24px so a wide card leaves air in the slot rather than
+   growing a slab, with a rounded top and a square foot on the baseline. */
+.sutradhar-column-bar {
+  width: 100%;
+  max-width: 1.5rem;
+  border-start-start-radius: var(--ux4g-radius-xs);
+  border-start-end-radius: var(--ux4g-radius-xs);
+  background-color: var(--ux4g-bg-primary-subtle);
+  transition: background-color 120ms ease-out;
+}
+
+/* A day with a count of one still has to be visible, so a bar never rounds
+   away to nothing. A day with a count of none must show no bar at all — a
+   two-pixel stub reads as "one" at a glance and turns a quiet day into a slow
+   one. The track keeps the slot either way, so the column still exists. */
+.sutradhar-column-bar {
+  min-height: 3px;
+}
+
+.sutradhar-column-none {
+  min-height: 0;
+}
+
+/* Emphasis, and only where it means something: the busiest day, and today.
+   Everything else is a quiet wash of the same hue — which is what makes the
+   two that are picked out read as picked out. */
+.sutradhar-column-peak,
+.sutradhar-column-today {
+  background-color: var(--ux4g-bg-primary-strong);
+}
+
+.sutradhar-column:hover .sutradhar-column-bar {
+  background-color: var(--ux4g-bg-primary-strong);
+}
+
+.sutradhar-column-cap {
+  font-size: var(--ux4g-fs-12);
+  line-height: var(--ux4g-lh-16);
+  font-weight: var(--ux4g-font-weight-semibold);
+  color: var(--ux4g-text-neutral-primary);
+}
+
+.sutradhar-column-day {
+  font-size: var(--ux4g-fs-11);
+  line-height: var(--ux4g-lh-14);
+  color: var(--ux4g-text-neutral-secondary);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 100%;
+}
+
+.sutradhar-column-day-now {
+  font-weight: var(--ux4g-font-weight-semibold);
+  color: var(--ux4g-text-neutral-primary);
+}
+
+/* --- The status bars ----------------------------------------------------- */
+
+.sutradhar-bars {
+  display: grid;
+  gap: var(--ux4g-gap-row-s);
+}
+
+/* Label, bar, count. One column each on a phone would stack the count under the
+   bar and lose the association, so the row keeps its shape and the label is
+   allowed to wrap instead. */
+.sutradhar-bar-row {
+  display: grid;
+  grid-template-columns: minmax(7rem, auto) 1fr auto;
+  align-items: center;
+  gap: var(--ux4g-gap-column-s);
+}
+
+.sutradhar-bar-label {
+  display: flex;
+  align-items: center;
+  gap: var(--ux4g-gap-column-2xs);
+  font-size: var(--ux4g-fs-14);
+  line-height: var(--ux4g-lh-18);
+  color: var(--ux4g-text-neutral-primary);
+}
+
+/* Same shipped-CSS workaround as the tile icon: two classes beat the bare one
+   that would colour this `--ux4g-text-neutral-inverse`. */
+.sutradhar-bar-icon.ux4g-icon-outlined {
+  color: var(--tone);
+  font-size: var(--ux4g-fs-18);
+  height: var(--ux4g-size-18);
+  width: var(--ux4g-size-18);
+  flex-shrink: 0;
+}
+
+/* The track is a step off the surface, so a count of zero is still a row rather
+   than a gap where a row should be. */
+.sutradhar-bar-track {
+  height: var(--ux4g-size-12);
+  border-radius: var(--ux4g-radius-full);
+  background-color: var(--tone-wash);
+  overflow: hidden;
+}
+
+.sutradhar-bar-fill {
+  display: block;
+  height: 100%;
+  min-width: 2px;
+  border-radius: var(--ux4g-radius-full);
+  background-color: var(--tone);
+}
+
+/* The count sits outside the fill, at the tip, so a short bar can never clip
+   its own label. */
+.sutradhar-bar-count {
+  font-size: var(--ux4g-fs-14);
+  line-height: var(--ux4g-lh-18);
+  font-weight: var(--ux4g-font-weight-semibold);
+  color: var(--ux4g-text-neutral-primary);
+  min-width: 2ch;
+  text-align: end;
+}
+
+/* Columns of figures line up; standalone figures do not need to. */
+.sutradhar-figures {
+  font-variant-numeric: tabular-nums;
+}
+
+/* The table behind each chart. */
+.sutradhar-chart-table > summary {
+  cursor: pointer;
+  color: var(--ux4g-text-link-default-default);
+}
+
+.sutradhar-chart-table > summary:focus-visible {
+  outline: var(--ux4g-border-width-md) solid var(--ux4g-text-brand-primary-default);
+  outline-offset: 2px;
+}
+
+/* The two charts sit side by side where there is room and stack where there is
+   not. UX4G's 12-column grid could do this, but not with equal heights and not
+   without a rule of our own for the breakpoint, so it is one line here. */
+.sutradhar-chart-row {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: var(--ux4g-gap-column-m);
+}
+
+@media (min-width: 900px) {
+  .sutradhar-chart-row {
+    grid-template-columns: 3fr 2fr;
+    align-items: start;
+  }
+}
+
+/* The menu and close buttons in the navigation bar.
+
+   `ux4g-icon-btn-lg` is 48px square, so the target needs nothing from us. Only
+   the icon's colour does: paired with `ux4g-icon-outlined`, whose bare rule in
+   the shipped CSS sets `color: var(--ux4g-text-neutral-inverse)` — near-white,
+   invisible on this bar. Two classes beat one and hand it back to the button,
+   which is already carrying the right one. */
+.sutradhar-nav-icon.ux4g-icon-outlined {
+  color: currentColor;
+  font-size: var(--ux4g-fs-24);
+  height: var(--ux4g-size-24);
+  width: var(--ux4g-size-24);
+}
+
+.sutradhar-menu-button:focus-visible {
+  outline: var(--ux4g-border-width-md) solid var(--ux4g-text-brand-primary-default);
+  outline-offset: 2px;
 }

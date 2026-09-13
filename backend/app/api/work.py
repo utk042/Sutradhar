@@ -14,6 +14,7 @@ of who may see what, used by every route that reaches a document —
 Read-only. Nothing on this route writes anything.
 """
 
+from collections import Counter
 from datetime import timedelta
 from typing import Annotated
 
@@ -28,7 +29,7 @@ from app.models.document import Document
 from app.models.finding import Finding as FindingRow
 from app.models.types import utcnow
 from app.models.user import User
-from app.schemas.work import DecidedDocument, WorkSummary
+from app.schemas.work import DayCount, DecidedDocument, FindingTally, WorkSummary
 
 router = APIRouter(prefix="/work", tags=["work"])
 
@@ -38,6 +39,10 @@ SessionDep = Annotated[Session, Depends(get_app_session)]
 #: How many recent decisions the screen shows. Enough to recognise this week's
 #: work, short enough that the page needs no pagination of its own.
 RECENT_LIMIT = 10
+
+#: The window the day-by-day chart covers. A week reads as a week to the person
+#: looking at it, and seven columns fit a phone without crowding.
+CHART_DAYS = 7
 
 
 @router.get("", response_model=WorkSummary)
@@ -98,6 +103,43 @@ def my_work(user: OfficerDep, session: SessionDep) -> WorkSummary:
         )
     ) or 0
 
+    # Day by day, for the chart. Bucketed in Python rather than SQL: date
+    # truncation is dialect-specific — `date()` in SQLite, `date_trunc` in
+    # Postgres — and nothing here is big enough for that to matter. Everything
+    # else in this project stays portable the same way.
+    window_start = (utcnow() - timedelta(days=CHART_DAYS - 1)).date()
+    decided_days = session.scalars(
+        select(Document.reviewed_at).where(
+            Document.id.in_(mine),
+            Document.reviewed_by == user.id,
+            Document.reviewed_at.is_not(None),
+        )
+    ).all()
+    per_day = Counter(
+        moment.date() for moment in decided_days if moment.date() >= window_start
+    )
+    # Every day in the window, including the empty ones: a chart that drops the
+    # quiet days misstates the shape of the week.
+    daily = [
+        DayCount(day=window_start + timedelta(days=offset), decided=per_day.get(window_start + timedelta(days=offset), 0))
+        for offset in range(CHART_DAYS)
+    ]
+
+    # How the checks came out across everything in view, for the status bars.
+    tally = dict(
+        session.execute(
+            select(FindingRow.status, func.count())
+            .join(Document, Document.id == FindingRow.document_id)
+            .where(Document.id.in_(mine))
+            .group_by(FindingRow.status)
+        ).all()
+    )
+    findings = FindingTally(
+        verified=tally.get("verified", 0),
+        mismatch=tally.get("mismatch", 0),
+        unverifiable=tally.get("unverifiable", 0),
+    )
+
     recent = session.scalars(
         visible_documents(user)
         .where(Document.reviewed_by == user.id, Document.reviewed_at.is_not(None))
@@ -111,5 +153,7 @@ def my_work(user: OfficerDep, session: SessionDep) -> WorkSummary:
         decided_total=decided_total,
         average_seconds=round(average_seconds, 1) if average_seconds is not None else None,
         flags_waiting=flags_waiting,
+        daily=daily,
+        findings=findings,
         recent=[DecidedDocument.model_validate(d) for d in recent],
     )

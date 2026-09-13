@@ -572,8 +572,9 @@ No second CSS framework is present, and no UX4G component is rebuilt with custom
 markup. Custom CSS is limited to `frontend/src/styles/app.css` — a page shell, a
 reading-width container, a screen-reader utility, a skip link, a quiet footer,
 the logo's brand colour, the sign-in split and its illustration, the annotation
-marks on a document page, the table/card breakpoint, a handful of responsive
-corrections, and the contrast repoint above. Each carries an inline note saying
+marks on a document page, the stat tiles and both charts, the table/card
+breakpoint, a handful of responsive corrections, and the contrast repoint
+above. Each carries an inline note saying
 which UX4G capability is missing.
 
 Two things UX4G ships were adjusted rather than replaced, both with a UX4G
@@ -732,6 +733,64 @@ and the officers this is built for are the ones least helped by two things askin
 for attention at once. The numbers are one click away instead, from the
 navigation bar on every page.
 
+## The dashboards: what the numbers look like
+
+Four stat tiles and two charts on each screen — the same shapes for a head of
+department and for an officer, drawn over the whole office or over one desk.
+
+**No charting library.** The brief rules one out, and for seven columns and
+three bars a library would be several hundred kilobytes to avoid a percentage.
+Every mark is plain HTML and CSS; every colour, radius, spacing and type value
+is a UX4G token.
+
+### Colour means something, and never means it alone
+
+Counts wear the brand hue, because a count is neither good nor bad. States wear
+UX4G's reserved status steps. A tile's tone follows the *kind* of number, never
+its size, and the flag count turns amber only when it is not zero — a zero
+wearing a warning colour is shouting about nothing.
+
+The steps are `--ux4g-text-status-*`, not the `--ux4g-bg-*-strong` ones that
+look like the obvious choice. Measured against the card a mark sits on:
+
+| State | Light | Dark |
+|---|---|---|
+| Verified (success) | 9.4:1 | 11.6:1 |
+| Does not match (error) | 9.4:1 | 11.6:1 |
+| Needs your check (warning) | 5.4:1 | 13.1:1 |
+
+All clear the 3:1 a mark needs. The `bg-*-strong` warning step would have put
+that bar at **2.4:1** on a white card.
+
+### Why green and red are never drawn touching
+
+The obvious design for "decisions this week" is approved and rejected stacked in
+each column. Run UX4G's status greens and reds through the colour-blindness
+check and they separate by **ΔE 6.1** under deuteranopia in the light theme and
+only **4.2** in dark, against a floor of 6 and a target of 8. Below the floor, no
+amount of labelling rescues an adjacent pair.
+
+So the pair is never adjacent. The columns carry the **total** decided each day —
+one series, one hue, no legend needed because the heading says what is plotted —
+and the approved-and-rejected split is told in the tiles, where each number has
+its own words. The findings chart puts its three states on **separate rows**,
+each with its own icon, its own written label and its own count, so colour is
+the third thing saying what the row already says twice.
+
+### The rest of the specs
+
+Thin columns capped at 24px with a rounded top and a square foot on the
+baseline; one solid hairline baseline a step off the surface; no gridlines,
+because seven small integers do not need them and every value is written on its
+own cap. Nothing dashed anywhere. Only today and the busiest day are emphasised,
+which is what makes the emphasis mean anything. A day with no decisions gets no
+bar at all — a two-pixel stub reads as "one" at a glance.
+
+Every value is printed, so nothing is hidden behind a hover, and each chart
+carries a **"Show these numbers as a table"** disclosure: a screen reader gets
+the figures with their dates and labels attached rather than a row of bare
+numbers, and anyone who reads numbers faster than shapes gets them directly.
+
 ## Getting around, at every screen size
 
 **There is always a way back.** Every screen except the desk and sign-in carries
@@ -748,9 +807,10 @@ entire bar, logo and links and Settings together, was removed from the page.
 There was no way to the desk, no way to the office screen, no way to Settings and
 no way back from anything. UX4G's answer is the paired `ux4g-navbar-mobile` slot,
 which `SiteNav` now provides: below 768px the links move into a UX4G Drawer
-behind one button labelled with the word **Menu**, not a bare hamburger, because
-the officers this is for have not used an app that taught them what three lines
-mean.
+behind a hamburger button. It is a `ux4g-icon-btn-lg`, which is 48px square, so
+the target needs nothing added; and it is not an unnamed icon — `aria-label`
+carries the word "Menu", so a screen reader announces it exactly as a text
+button would.
 
 The drawer behaves like the modal it declares itself to be. Escape closes it and
 returns focus to the button that opened it, Tab cycles within it rather than

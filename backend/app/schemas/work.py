@@ -5,7 +5,7 @@ reference, which is what every other screen and every audit row uses to name a
 file.
 """
 
-from datetime import datetime
+from datetime import date, datetime
 
 from pydantic import BaseModel, ConfigDict
 
@@ -22,6 +22,28 @@ class DecidedDocument(BaseModel):
     reviewed_at: datetime | None
 
 
+class DayCount(BaseModel):
+    """One day's worth of decisions, for the column chart.
+
+    Every day in the window is present, including the ones with nothing in them
+    — a chart that silently drops empty days misstates the shape of a week.
+    """
+
+    day: date
+    decided: int
+
+
+class FindingTally(BaseModel):
+    """How the checks came out, across the files in view.
+
+    The three states the officer already sees on every finding card, counted.
+    """
+
+    verified: int
+    mismatch: int
+    unverifiable: int
+
+
 class WorkSummary(BaseModel):
     """The numbers on an officer's own screen, and what they have just done."""
 
@@ -36,4 +58,7 @@ class WorkSummary(BaseModel):
     #: Findings needing attention on files still waiting — the morning's work,
     #: rather than a lifetime total nothing can be done about.
     flags_waiting: int
+    #: Oldest first, so the chart reads left to right as time does.
+    daily: list[DayCount]
+    findings: FindingTally
     recent: list[DecidedDocument]

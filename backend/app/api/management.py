@@ -9,6 +9,7 @@ Everything that changes anything is audited.
 """
 
 import logging
+from collections import Counter
 from datetime import timedelta
 from typing import Annotated
 
@@ -18,6 +19,7 @@ from sqlalchemy.orm import Session
 
 from app.api.deps import require_dept_head
 from app.api.scope import load_managed_user, load_visible_document, visible_users
+from app.api.work import CHART_DAYS
 from app.db.app import get_app_session
 from app.models.audit import AuditLogEntry
 from app.models.decision import Decision
@@ -39,6 +41,7 @@ from app.schemas.management import (
     Reassign,
     SetActive,
 )
+from app.schemas.work import DayCount, FindingTally
 from app.services import audit
 from app.services.security import hash_password
 
@@ -97,12 +100,46 @@ def stats(user: HeadDep, session: SessionDep) -> DepartmentStats:
         select(func.count()).select_from(User).where(User.department_id == user.department_id)
     ) or 0
 
+    # The two charts. Same shapes as an officer's own screen, over the whole
+    # department instead of one desk — see app/api/work.py for why both are
+    # bucketed in Python rather than in dialect-specific SQL.
+    window_start = (utcnow() - timedelta(days=CHART_DAYS - 1)).date()
+    per_day = Counter(
+        moment.date()
+        for moment in session.scalars(
+            select(Document.reviewed_at).where(mine, Document.reviewed_at.is_not(None))
+        ).all()
+        if moment.date() >= window_start
+    )
+    daily = [
+        DayCount(
+            day=window_start + timedelta(days=offset),
+            decided=per_day.get(window_start + timedelta(days=offset), 0),
+        )
+        for offset in range(CHART_DAYS)
+    ]
+
+    tally = dict(
+        session.execute(
+            select(FindingRow.status, func.count())
+            .join(Document, Document.id == FindingRow.document_id)
+            .where(mine)
+            .group_by(FindingRow.status)
+        ).all()
+    )
+
     return DepartmentStats(
         processed_today=processed_today,
         average_seconds=round(average_seconds, 1) if average_seconds is not None else None,
         flags_raised=flags_raised,
         pending_now=pending_now,
         officers=officers,
+        daily=daily,
+        findings=FindingTally(
+            verified=tally.get("verified", 0),
+            mismatch=tally.get("mismatch", 0),
+            unverifiable=tally.get("unverifiable", 0),
+        ),
     )
 
 

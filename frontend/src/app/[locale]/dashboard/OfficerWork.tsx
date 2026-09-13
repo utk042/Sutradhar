@@ -4,6 +4,9 @@ import {useEffect, useState} from 'react';
 import {useFormatter, useTranslations} from 'next-intl';
 import {Link} from '@/i18n/routing';
 import Breadcrumb from '@/components/Breadcrumb';
+import DecisionsChart from '@/components/DecisionsChart';
+import FindingsChart from '@/components/FindingsChart';
+import StatCard from '@/components/StatCard';
 import StatusTag from '@/components/StatusTag';
 import {getMyWork, type WorkSummary} from '@/lib/api';
 
@@ -77,11 +80,39 @@ export default function OfficerWork() {
         ? td('seconds', {value: Math.round(work.average_seconds)})
         : td('minutes', {value: Math.round(work.average_seconds / 60)});
 
+  /**
+   * Four tiles, four tones.
+   *
+   * The tone says what kind of number it is, not how big it is: work waiting is
+   * the brand hue because a queue is neither good nor bad, work finished is
+   * success, and a flag is amber only when there is one — a zero wearing a
+   * warning colour would be shouting about nothing.
+   */
   const numbers = [
-    {label: t('statPending'), value: String(work.pending_now)},
-    {label: t('statDecidedToday'), value: String(work.decided_today)},
-    {label: t('statAverage'), value: averageLabel},
-    {label: t('statFlags'), value: String(work.flags_waiting)}
+    {
+      label: t('statPending'),
+      value: String(work.pending_now),
+      tone: 'brand' as const,
+      icon: 'pending_actions'
+    },
+    {
+      label: t('statDecidedToday'),
+      value: String(work.decided_today),
+      tone: 'success' as const,
+      icon: 'task_alt'
+    },
+    {
+      label: t('statAverage'),
+      value: averageLabel,
+      tone: 'neutral' as const,
+      icon: 'schedule'
+    },
+    {
+      label: t('statFlags'),
+      value: String(work.flags_waiting),
+      tone: work.flags_waiting > 0 ? ('warning' as const) : ('neutral' as const),
+      icon: 'flag'
+    }
   ];
 
   return (
@@ -97,15 +128,19 @@ export default function OfficerWork() {
 
       <div className="sutradhar-stat-row ux4g-mb-l">
         {numbers.map((number) => (
-          <div key={number.label} className="ux4g-card ux4g-card-solid">
-            <div className="ux4g-card-body">
-              <p className="ux4g-body-s-default ux4g-text-neutral-secondary ux4g-mb-xs">
-                {number.label}
-              </p>
-              <p className="ux4g-heading-l-strong">{number.value}</p>
-            </div>
-          </div>
+          <StatCard
+            key={number.label}
+            label={number.label}
+            value={number.value}
+            tone={number.tone}
+            icon={number.icon}
+          />
         ))}
+      </div>
+
+      <div className="sutradhar-chart-row ux4g-mb-xl">
+        <DecisionsChart days={work.daily} />
+        <FindingsChart findings={work.findings} />
       </div>
 
       {/* The one thing on this screen that leads anywhere: back to the files

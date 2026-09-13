@@ -3,6 +3,9 @@
 import {useCallback, useEffect, useState} from 'react';
 import {useFormatter, useTranslations} from 'next-intl';
 import Breadcrumb from '@/components/Breadcrumb';
+import DecisionsChart from '@/components/DecisionsChart';
+import FindingsChart from '@/components/FindingsChart';
+import StatCard from '@/components/StatCard';
 import OfficerRoster from '@/components/OfficerRoster';
 import DepartmentAudit from '@/components/DepartmentAudit';
 import {
@@ -63,24 +66,54 @@ export default function DepartmentDashboard() {
         {t('subtitle')}
       </p>
 
-      {/* The three numbers, plus what is waiting right now. */}
-      <div className="sutradhar-stat-row ux4g-mb-xl">
+      {/* The three numbers, plus what is waiting right now.
+          The tone says what kind of number each is, never how big: a queue is
+          the brand hue because it is neither good nor bad, finished work is
+          success, and the flag count turns amber only when it is not zero. */}
+      <div className="sutradhar-stat-row ux4g-mb-l">
         {[
-          {label: t('statProcessed'), value: String(stats?.processed_today ?? 0)},
-          {label: t('statAverage'), value: averageLabel},
-          {label: t('statFlags'), value: String(stats?.flags_raised ?? 0)},
-          {label: t('statPending'), value: String(stats?.pending_now ?? 0)}
+          {
+            label: t('statProcessed'),
+            value: String(stats?.processed_today ?? 0),
+            tone: 'success' as const,
+            icon: 'task_alt'
+          },
+          {
+            label: t('statAverage'),
+            value: averageLabel,
+            tone: 'neutral' as const,
+            icon: 'schedule'
+          },
+          {
+            label: t('statFlags'),
+            value: String(stats?.flags_raised ?? 0),
+            tone: (stats?.flags_raised ?? 0) > 0 ? ('warning' as const) : ('neutral' as const),
+            icon: 'flag'
+          },
+          {
+            label: t('statPending'),
+            value: String(stats?.pending_now ?? 0),
+            tone: 'brand' as const,
+            icon: 'pending_actions'
+          }
         ].map((stat) => (
-          <div key={stat.label} className="ux4g-card ux4g-card-solid">
-            <div className="ux4g-card-body">
-              <p className="ux4g-body-s-default ux4g-text-neutral-secondary ux4g-mb-xs">
-                {stat.label}
-              </p>
-              <p className="ux4g-heading-l-strong">{stat.value}</p>
-            </div>
-          </div>
+          <StatCard
+            key={stat.label}
+            label={stat.label}
+            value={stat.value}
+            tone={stat.tone}
+            icon={stat.icon}
+          />
         ))}
       </div>
+
+      {/* The same two charts an officer sees, over the whole office. */}
+      {stats !== null && (
+        <div className="sutradhar-chart-row ux4g-mb-xl">
+          <DecisionsChart days={stats.daily} />
+          <FindingsChart findings={stats.findings} />
+        </div>
+      )}
 
       <OfficerRoster onChanged={load} />
       <DepartmentAudit />

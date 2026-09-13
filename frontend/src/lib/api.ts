@@ -214,12 +214,32 @@ export interface Officer {
   decided: number;
 }
 
+// --- What the two dashboards chart ----------------------------------------
+//
+// One pair of shapes, drawn twice: over a whole department for a head, over one
+// desk for an officer. The backend derives both from the same definitions, so
+// the two screens cannot drift apart.
+
+export interface DayCount {
+  /** ISO date, oldest first. */
+  day: string;
+  decided: number;
+}
+
+export interface FindingTally {
+  verified: number;
+  mismatch: number;
+  unverifiable: number;
+}
+
 export interface DepartmentStats {
   processed_today: number;
   average_seconds: number | null;
   flags_raised: number;
   pending_now: number;
   officers: number;
+  daily: DayCount[];
+  findings: FindingTally;
 }
 
 export interface AuditRow {
@@ -253,6 +273,8 @@ export interface WorkSummary {
   decided_total: number;
   average_seconds: number | null;
   flags_waiting: number;
+  daily: DayCount[];
+  findings: FindingTally;
   recent: DecidedDocument[];
 }
 

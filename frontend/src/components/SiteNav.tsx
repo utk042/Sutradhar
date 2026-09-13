@@ -186,15 +186,27 @@ export default function SiteNav() {
 
       {/* Narrow screens: one button, and everything behind it. */}
       <div className="ux4g-navbar-mobile">
+        {/* An icon button, so the bar stays the logo and one control at 360px.
+            It is not an unnamed icon: `aria-label` carries the word "Menu", so
+            a screen reader announces it exactly as the text button did, and
+            `ux4g-icon-btn` keeps the 48px target the words used to give it.
+
+            `sutradhar-nav-icon` is paired with `ux4g-icon-outlined` because the
+            bare class is coloured `--ux4g-text-neutral-inverse` by a stray
+            topbar rule in the shipped CSS — near-white, invisible on this bar.
+            Two classes beat one and hand it back `currentColor`. */}
         <button
           ref={openerRef}
           type="button"
-          className="ux4g-btn ux4g-btn-outline-neutral ux4g-btn-lg"
+          className="ux4g-icon-btn ux4g-icon-btn-outline-primary ux4g-icon-btn-lg sutradhar-menu-button"
+          aria-label={t('menu')}
           aria-expanded={menuOpen}
           aria-controls={menuId}
           onClick={() => setMenuOpen(true)}
         >
-          {t('menu')}
+          <span className="ux4g-icon-outlined sutradhar-nav-icon" aria-hidden="true">
+            menu
+          </span>
         </button>
       </div>
 
@@ -236,10 +248,13 @@ export default function SiteNav() {
           <div className="ux4g-drawer-header-actions">
             <button
               type="button"
-              className="ux4g-btn ux4g-btn-text-neutral ux4g-btn-lg"
+              className="ux4g-icon-btn ux4g-icon-btn-outline-primary ux4g-icon-btn-lg sutradhar-menu-button"
+              aria-label={t('closeMenu')}
               onClick={closeMenu}
             >
-              {t('closeMenu')}
+              <span className="ux4g-icon-outlined sutradhar-nav-icon" aria-hidden="true">
+                close
+              </span>
             </button>
           </div>
         </div>
