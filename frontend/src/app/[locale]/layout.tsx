@@ -5,7 +5,7 @@ import {getMessages, getTranslations, setRequestLocale} from 'next-intl/server';
 
 import Ux4gRuntime from '@/components/Ux4gRuntime';
 import Logo from '@/components/Logo';
-import HeadNav from '@/components/HeadNav';
+import NavLinks from '@/components/NavLinks';
 import LanguageSwitcher from '@/components/LanguageSwitcher';
 import {routing, type Locale} from '@/i18n/routing';
 
@@ -35,14 +35,20 @@ export function generateStaticParams() {
  * theme. The UX4G runtime sets it on DOMContentLoaded, which is too late and
  * flashes.
  *
- * The attribute is deliberately NOT rendered server-side: an SSR'd
- * `data-theme="light"` would make this script a no-op and the service would be
- * stuck in light mode regardless of the officer's system setting. The script is
- * synchronous and sits in <head>, so it runs before the body paints and there is
- * no flash. Dark mode then comes free from the system preference, with no toggle
- * of our own — per the brief.
+ * The attribute is deliberately NOT rendered server-side. The choice lives in
+ * localStorage, which the server cannot see, so an SSR'd value would be wrong
+ * for anyone who picked the other one — and rendering it would make this script
+ * a no-op. Instead the script is synchronous and sits in <head>, so it runs
+ * before the body paints: the officer's choice is in force on the first frame
+ * and there is no flash of the wrong theme.
+ *
+ * Kept as a literal string rather than importing from lib/theme.ts: it has to
+ * run before any bundle loads, so it cannot be part of one. The storage key
+ * below is therefore written out twice; it must stay equal to
+ * THEME_STORAGE_KEY in lib/theme.ts, or the settings screen writes a choice
+ * this script never reads.
  */
-const THEME_SCRIPT = `(function(){try{var d=document.documentElement;if(!d.getAttribute('data-theme')){d.setAttribute('data-theme',window.matchMedia('(prefers-color-scheme: dark)').matches?'dark':'light')}}catch(e){document.documentElement.setAttribute('data-theme','light')}})();`;
+const THEME_SCRIPT = `(function(){try{var c=window.localStorage.getItem('sutradhar.theme');var t=(c==='light'||c==='dark')?c:(window.matchMedia('(prefers-color-scheme: dark)').matches?'dark':'light');document.documentElement.setAttribute('data-theme',t)}catch(e){document.documentElement.setAttribute('data-theme','light')}})();`;
 
 export default async function LocaleLayout({
   children,
@@ -78,7 +84,7 @@ export default async function LocaleLayout({
               <div className="ux4g-container ux4g-navbar-wrap">
                 <Logo />
                 <div className="ux4g-navbar-right ux4g-d-flex ux4g-ai-center ux4g-gap-s">
-                  <HeadNav />
+                  <NavLinks />
                   <LanguageSwitcher />
                 </div>
               </div>

@@ -416,7 +416,8 @@ Baseline is WCAG 2.1 AA, as a government service requires. Verified in a browser
 at 1366×768:
 
 - Keyboard-only sign-in works end to end; tab order is skip link → language →
-  text size → fields → sign in
+  fields → sign in. Nothing else is on the login screen, including the settings
+  link, which appears only once signed in
 - Visible focus on every control: 2px solid `Focus/Outline`
 - Interactive controls are ≥44×44px (`ux4g-btn-lg` is 48px; the default `md`
   size is 40px and is deliberately not used for officer-facing actions)
@@ -428,12 +429,62 @@ There is no on-screen text-resize widget. Accessibility here is structural —
 label associations, focus order, landmarks, a skip link — rather than a control
 panel bolted onto the header.
 
+The focus ring is theme-aware rather than a fixed colour: measured at
+`#171717` on white in light and `#FAFAFA` on `#0A0A0A` in dark, so a
+keyboard-only officer can see where they are in either.
+
 **One upstream accessibility defect is fixed here.** UX4G's resting control
 border measures 1.26:1 against the input's own background — far below the 3:1
 WCAG 1.4.11 requires for a control boundary, and effectively invisible to a
 low-vision user. `src/styles/app.css` repoints it to
 `--ux4g-border-color-neutral-strong`, giving 4.74:1 in light and 7.66:1 in dark.
 Both are UX4G semantic tokens; no new colour is introduced.
+
+## Settings: light, dark, and language
+
+`/settings` holds the two preferences an officer can change for themselves.
+Both apply the moment they are chosen — no Save button, because there is nothing
+to lose if the page closes and a confirmation step for a preference is a step
+for nothing.
+
+**Appearance** is light, dark, or *match my device*. UX4G ships both palettes and
+switches on `data-theme` on `<html>`, so this only chooses between the two; no
+colour is defined here. The choice lives in `localStorage` rather than on the
+account: the same officer may reasonably want dark at home and light on the
+office machine, and storing it on the account would make one override the other.
+Every read and write is wrapped — a locked-down browser profile throws rather
+than returning `null`, and a settings screen that takes the page down with it is
+worse than one that forgets. While *match my device* is selected the page
+follows `prefers-color-scheme` live, so a machine that switches at sunset does
+not leave a light page until the next reload.
+
+**Language** is the existing `en`/`hi` switch, shown here as well as in the
+header. Each option is written in its own script and carries `lang`, so a screen
+reader pronounces "हिन्दी" as Hindi whichever language you already speak. The
+choice stays in the address rather than in storage, so a Hindi page that is
+bookmarked or sent to a colleague opens in Hindi.
+
+### The theme applies before the first paint
+
+A theme read from `localStorage` by React would arrive after the first frame, so
+an officer who chose dark would see a white flash on every page load. The layout
+therefore sets `data-theme` from a small inline script in `<head>`, before the
+body is parsed, and deliberately does *not* render the attribute server-side —
+an SSR value would pin every visitor to one theme and make the script dead code.
+
+Measured in Chromium with a probe installed before `<html>` itself existed,
+recording every `data-theme` mutation and the value at the first animation
+frame:
+
+| Load | `data-theme` changes | At first frame |
+|---|---|---|
+| Stored **dark**, device light | one, `dark`, `<body>` not yet parsed | `dark` |
+| Stored **light** | one, `light`, `<body>` not yet parsed | `light` |
+| Nothing stored, device dark | one, `dark`, `<body>` not yet parsed | `dark` |
+
+One change per load, always before `<body>` exists, and the correct value
+already in place at the earliest moment the browser could have painted. There is
+no frame of the wrong theme to see.
 
 ### Known constraint: stylesheet size
 

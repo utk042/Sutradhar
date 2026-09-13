@@ -8,7 +8,8 @@
   "language": {
     "label": "Language",
     "en": "English",
-    "hi": "हिन्दी"
+    "hi": "हिन्दी",
+    "switchLabel": "Change language"
   },
   "login": {
     "title": "Sign in",
@@ -250,5 +251,19 @@
   "nav": {
     "desk": "Your desk",
     "dashboard": "Your office"
+  },
+  "settings": {
+    "title": "Settings",
+    "subtitle": "How this service looks, and what language it speaks. Changes apply straight away.",
+    "appearance": "Appearance",
+    "appearanceHint": "Choose a light or dark screen, or let it follow the device you are using.",
+    "theme": {
+      "light": "Light",
+      "dark": "Dark",
+      "system": "Match my device",
+      "systemHint": "This screen will change when your device does."
+    },
+    "languageHint": "Your choice stays in the address, so a page you bookmark or send to a colleague opens in the same language.",
+    "open": "Settings"
   }
 }
