@@ -423,14 +423,17 @@ backend/
     db/          readonly.py (mode=ro) · app.py (read-write)
     models/      the nine tables
     schemas/     Pydantic v2 request/response types
-    api/         auth · health  (review, documents, stream: later phases)
+    api/         auth · health · documents · review · stream ·
+                 management (a head's office) · work (an officer's own desk)
     services/    security (Argon2id, JWT)
   alembic/       migrations
   scripts/seed.py
 frontend/
   messages/      en.json · hi.json
-  src/app/[locale]/    layout · login · home
-  src/components/      Logo · Ux4gRuntime · LanguageSwitcher
+  src/app/[locale]/    layout · login · home · review · settings ·
+                       dashboard (officer's work / head's office)
+  src/components/      Logo · Ux4gRuntime · SiteNav · Breadcrumb ·
+                       DocumentPicker · TableScroll · AuthArtwork
   src/lib/api.ts
   src/styles/app.css   the only custom CSS in the project
 ```
@@ -487,10 +490,20 @@ Both apply the moment they are chosen — no Save button, because there is nothi
 to lose if the page closes and a confirmation step for a preference is a step
 for nothing.
 
-**Appearance** is light, dark, or *match my device*. UX4G ships both palettes and
-switches on `data-theme` on `<html>`, so this only chooses between the two; no
-colour is defined here. The choice lives in `localStorage` rather than on the
-account: the same officer may reasonably want dark at home and light on the
+This screen is the *only* place either can be changed. Neither appears in the
+navigation bar. A service counter is a shared machine, and a theme or language
+control in the chrome of every page is one an officer changes by accident and
+then cannot find their way back from; putting both behind Settings means a
+change is always deliberate and always in one known place.
+
+**Appearance** is light, dark, or *match my device*, and **light is the
+default**. UX4G ships both palettes and switches on `data-theme` on `<html>`, so
+this only chooses between the two; no colour is defined here. The device's own
+`prefers-color-scheme` is honoured only once *match my device* has been picked
+explicitly — an officer who has never opened Settings gets the same screen as
+the colleague beside them, rather than one decided by whatever the browser on
+that desk happens to be set to. The choice lives in `localStorage` rather than on
+the account: the same officer may reasonably want dark at home and light on the
 office machine, and storing it on the account would make one override the other.
 Every read and write is wrapped — a locked-down browser profile throws rather
 than returning `null`, and a settings screen that takes the page down with it is
@@ -498,11 +511,15 @@ worse than one that forgets. While *match my device* is selected the page
 follows `prefers-color-scheme` live, so a machine that switches at sunset does
 not leave a light page until the next reload.
 
-**Language** is the existing `en`/`hi` switch, shown here as well as in the
-header. Each option is written in its own script and carries `lang`, so a screen
-reader pronounces "हिन्दी" as Hindi whichever language you already speak. The
-choice stays in the address rather than in storage, so a Hindi page that is
-bookmarked or sent to a colleague opens in Hindi.
+**Language** is the `en`/`hi` switch, and **English is the default**.
+`localeDetection` is off in `i18n/routing.ts`, so next-intl does not read
+`Accept-Language` and redirect: an office machine configured for Hindi would
+otherwise open in Hindi with nobody having chosen it, and the screen that owns
+the choice would be showing a language it never set. Each option is written in
+its own script and carries `lang`, so a screen reader pronounces "हिन्दी" as
+Hindi whichever language you already speak. The choice stays in the address
+rather than in storage, so a Hindi page that is bookmarked or sent to a colleague
+opens in Hindi.
 
 ### The theme applies before the first paint
 
@@ -554,13 +571,287 @@ theme is used; there are no brand colour overrides.
 No second CSS framework is present, and no UX4G component is rebuilt with custom
 markup. Custom CSS is limited to `frontend/src/styles/app.css` — a page shell, a
 reading-width container, a screen-reader utility, a skip link, a quiet footer,
-the logo's brand colour, and the contrast repoint above. Each carries an inline
-note saying which UX4G capability is missing.
+the logo's brand colour, the sign-in split and its illustration, the annotation
+marks on a document page, the stat tiles and both charts, the table/card
+breakpoint, a handful of responsive corrections, and the contrast repoint
+above. Each carries an inline note saying
+which UX4G capability is missing.
+
+Two things UX4G ships were adjusted rather than replaced, both with a UX4G
+utility class on the element rather than a descendant rule overriding a component
+internal, which §13 of the contract forbids: `ux4g-jc-center` on the File
+Upload's action row, whose button is left-aligned under a centred panel, and the
+UX4G flex utilities on the Breadcrumb's list, whose shipped rule sets
+`flex-wrap` and `gap` but never `display`, leaving the gap inert.
+
+Four defects in the shipped package were worked around rather than silently
+absorbed, and are listed here so they can be reported upstream:
+
+1. **In-field action buttons are a 20px target.**
+   `.ux4g-input-lg .ux4g-input-action-btn` is sized 1.25rem square, under the
+   44px in Design.md §9 and under WCAG 2.2's 24px floor, with no larger variant
+   at any input size. Worked around on the password reveal by extending the hit
+   area rather than the button; see "Showing the password", above.
+2. **The Radio's label text does not select it.** `ux4g.js` installs a
+   delegated click handler that calls `preventDefault()` on every click inside
+   `.ux4g-radio` that is not on `.ux4g-radio-input` or `.ux4g-radio-control`.
+   Clicking the word beside a radio therefore does nothing, which breaks the
+   oldest convention in forms and shrinks the real target to the 20px circle
+   whatever padding the row carries. The Checkbox has no equivalent handler and
+   behaves correctly. Nothing in the service uses Radio today — the role field
+   is a select — but the defect is real and worth reporting.
+3. **A bare `.ux4g-icon-outlined` is invisible in the light theme.** A rule
+   intended for the topbar (`.ux4g-topbar__iconbtn .ux4g-icon-outlined`) carries
+   the bare class in its selector list and sets `color:
+   var(--ux4g-text-neutral-inverse)` — near-white on a white page. Icons are
+   only used here inside components that set their own icon colour.
+4. **`.ux4g-navbar-desktop` is `display: none !important` below 768px** with no
+   automatic mobile counterpart, so a navbar built from the documented classes
+   alone disappears entirely on a phone. See "Getting around", above.
 
 Sutradhar is a product built with UX4G, not a government portal. It does not
 carry a national emblem, a ministry masthead, or a "Government of India"
 attribution, because it is a demonstration system and claiming otherwise would
 be untrue.
+
+## The sign-in screen
+
+Two controls beyond the mobile number and password.
+
+### Showing the password
+
+An eye button inside the field, in UX4G's own `ux4g-input-actions` slot, showing
+`visibility` while the password is hidden and `visibility_off` while it is
+shown.
+
+One accessibility fix goes with it. The shipped rule
+
+```css
+.ux4g-input-lg .ux4g-input-action-btn { height: 1.25rem; width: 1.25rem }
+```
+
+makes every in-field action button a 20px target — under half the 44px baseline
+in Design.md §9, and below even WCAG 2.2's 24px floor. **Nothing overrides it.**
+The button keeps the exact size UX4G gives it, and a transparent
+pseudo-element extends only the *hit area*, which is what WCAG measures:
+20px + 12px + 12px = 44px each way, and the field at `lg` is 48px tall with
+`overflow: hidden`, so a 44px target centred in it clears the clip by 2px. The
+field looks pixel for pixel as the design system drew it; measured at 44x44 in a
+browser. The real fix belongs upstream in the package, where every consumer
+would get it.
+
+The icon is never the only signal. The button's accessible name is a verb —
+"Show password" or "Hide password" — and it changes with the state, so a screen
+reader announces the new name the moment it is pressed. `aria-pressed` is
+deliberately not added on top of a changing name: a reader would then announce
+both, and they contradict each other. The field showing plain text is the
+visible confirmation. Signing in hides it again, so a password is not left on
+screen for whoever sits down next.
+
+### Choosing a role
+
+The officer says whether they are signing in as an **officer** or a **head of
+department**, and the server refuses the sign-in if that disagrees with the
+account.
+
+**It is a declaration, not a request.** Picking "head of department" cannot make
+anyone one. The role in force is read from the `users` row at sign-in and
+re-read from the database on every subsequent request; the declared value is
+compared, never stored, never written into the token, and never consulted again.
+A field the client controls is not allowed to decide what the client may do, so
+the only thing this one can do is narrow — it can refuse a sign-in and nothing
+else.
+
+**Where the check sits is the whole of its safety.** It is below the password
+check in `app/api/auth.py`, not above it. Above it, `POST /api/auth/login` would
+answer "is this mobile number a head of department?" to anyone who asked, with
+no credential at all — a role oracle over every account in the service. Below
+it, the only people who can learn a role are the ones who have just proved they
+own the account. `tests/test_roles.py` pins all of this down: that a claim you
+do not hold is refused in both directions, that no cookie is set when it is,
+that the token's role still comes from the database when it matches, that a
+wrong password gives the identical generic answer whichever role was claimed,
+and that an invented role is rejected by the schema.
+
+The control is a native `<select>` composed into UX4G's Input shell, not UX4G's
+own Dropdown. Two reasons, and the first is decisive:
+
+1. UX4G's Dropdown is driven by the global runtime, which writes
+   `valueNode.textContent` and toggles classes on the element directly. React
+   owns that subtree and overwrites both on its next render — the two cannot
+   both be in charge of the same DOM.
+2. A native select is the better control for these users anyway: on a phone it
+   opens the operating system's own picker, which is large, familiar and needs
+   no learning.
+
+The shipped package has no Select — the `.ux4g-select-*` classes in the
+stylesheet are `user-select` utilities, grep-verified — so the field is composed
+from the Input classes, with the chevron in the actions slot and the browser's
+default appearance reset in `app.css`. `.ux4g-input` supplies the border,
+background, radius, padding and focus ring, so it matches the two fields above
+it exactly.
+
+Nothing is pre-selected: the first option is an empty, disabled "Choose one".
+Two steps to sign in rather than one is the cost of the choice being a real one,
+and a default that quietly works for most people is how the head of department
+ends up seeing an error every morning.
+
+The field is optional on the API. Omitting it signs you in exactly as before,
+which is not a way around anything — the role comes from the account either way.
+
+## Two dashboards, one address
+
+`/dashboard` renders one of two screens depending on who is asking.
+
+A **head of department** gets the office: the numbers for everybody, the roster,
+the audit trail and the model switch — unchanged.
+
+An **officer** gets their own desk counted: what is waiting for them, how many
+files they decided in the last day, how long they take on average, and how many
+things the checks have flagged on files still waiting. Below that, the last ten
+decisions they made, each linking to its record. The four numbers are the ones an
+officer can act on — "flagged" counts only undecided files, because a lifetime
+total of everything the checks ever raised is a number nobody can do anything
+about this morning.
+
+Two addresses would have meant two links in the navigation bar and each role
+having to learn where the other's screen lives. One address means the bar carries
+a single link; only its wording changes, because "Your office" would be a promise
+the officer's screen does not keep.
+
+**The scope is the server's, not the screen's.** `GET /api/work` is narrowed by
+`scope.visible_documents`, the same helper every other document route uses, which
+already means "assigned to me, in my department" for an officer. There is nothing
+to pass and nothing the browser could widen; `tests/test_department_scope.py`
+asserts this module goes through that helper and that one officer's numbers never
+include a colleague's desk.
+
+This screen is deliberately **not** the desk. `CLAUDE.md` asks for one action on
+the officer's home screen and the list of files waiting, and that is what it
+still is: a row of figures above the only button on the page competes with it,
+and the officers this is built for are the ones least helped by two things asking
+for attention at once. The numbers are one click away instead, from the
+navigation bar on every page.
+
+## The dashboards: what the numbers look like
+
+Four stat tiles and two charts on each screen — the same shapes for a head of
+department and for an officer, drawn over the whole office or over one desk.
+
+**No charting library.** The brief rules one out, and for seven columns and
+three bars a library would be several hundred kilobytes to avoid a percentage.
+Every mark is plain HTML and CSS; every colour, radius, spacing and type value
+is a UX4G token.
+
+### Colour means something, and never means it alone
+
+Counts wear the brand hue, because a count is neither good nor bad. States wear
+UX4G's reserved status steps. A tile's tone follows the *kind* of number, never
+its size, and the flag count turns amber only when it is not zero — a zero
+wearing a warning colour is shouting about nothing.
+
+The steps are `--ux4g-text-status-*`, not the `--ux4g-bg-*-strong` ones that
+look like the obvious choice. Measured against the card a mark sits on:
+
+| State | Light | Dark |
+|---|---|---|
+| Verified (success) | 9.4:1 | 11.6:1 |
+| Does not match (error) | 9.4:1 | 11.6:1 |
+| Needs your check (warning) | 5.4:1 | 13.1:1 |
+
+All clear the 3:1 a mark needs. The `bg-*-strong` warning step would have put
+that bar at **2.4:1** on a white card.
+
+### Why green and red are never drawn touching
+
+The obvious design for "decisions this week" is approved and rejected stacked in
+each column. Run UX4G's status greens and reds through the colour-blindness
+check and they separate by **ΔE 6.1** under deuteranopia in the light theme and
+only **4.2** in dark, against a floor of 6 and a target of 8. Below the floor, no
+amount of labelling rescues an adjacent pair.
+
+So the pair is never adjacent. The columns carry the **total** decided each day —
+one series, one hue, no legend needed because the heading says what is plotted —
+and the approved-and-rejected split is told in the tiles, where each number has
+its own words. The findings chart puts its three states on **separate rows**,
+each with its own icon, its own written label and its own count, so colour is
+the third thing saying what the row already says twice.
+
+### The rest of the specs
+
+Thin columns capped at 24px with a rounded top and a square foot on the
+baseline; one solid hairline baseline a step off the surface; no gridlines,
+because seven small integers do not need them and every value is written on its
+own cap. Nothing dashed anywhere. Only today and the busiest day are emphasised,
+which is what makes the emphasis mean anything. A day with no decisions gets no
+bar at all — a two-pixel stub reads as "one" at a glance.
+
+Every value is printed, so nothing is hidden behind a hover, and each chart
+carries a **"Show these numbers as a table"** disclosure: a screen reader gets
+the figures with their dates and labels attached rather than a row of bare
+numbers, and anyone who reads numbers faster than shapes gets them directly.
+
+## Getting around, at every screen size
+
+**There is always a way back.** Every screen except the desk and sign-in carries
+a UX4G Breadcrumb, and the navigation bar carries the desk, the office screen
+(heads of department only) and Settings on every page. Nothing relies on the
+browser's Back button: an officer who reached a file by typing a reference, or
+who has been reading a document for ten minutes, has no reason to trust it and
+often cannot find it on a phone.
+
+**The navigation bar survives a phone.** It previously did not. The bar carried
+`ux4g-navbar-desktop`, and the shipped rule for that class is
+`@media (max-width: 768px) { display: none !important }` — so on a phone the
+entire bar, logo and links and Settings together, was removed from the page.
+There was no way to the desk, no way to the office screen, no way to Settings and
+no way back from anything. UX4G's answer is the paired `ux4g-navbar-mobile` slot,
+which `SiteNav` now provides: below 768px the links move into a UX4G Drawer
+behind a hamburger button. It is a `ux4g-icon-btn-lg`, which is 48px square, so
+the target needs nothing added; and it is not an unnamed icon — `aria-label`
+carries the word "Menu", so a screen reader announces it exactly as a text
+button would.
+
+The drawer behaves like the modal it declares itself to be. Escape closes it and
+returns focus to the button that opened it, Tab cycles within it rather than
+walking off into the page underneath, the page behind does not scroll
+(`ux4g-drawer-lock`, UX4G's own body class), and while it is shut it is `inert`
+so its links are not silently in the tab order. Choosing a link closes it.
+
+**Wide tables become cards.** `ux4g-table-responsive` is `overflow-x: auto` and
+nothing more, so the officer's five-column list of waiting files lost its status
+and its Review button off the side of a container with no sign that it scrolled.
+Below 1024px that list is rendered as UX4G Cards instead — every field visible,
+a full-width button per file. Exactly one of the two is in the DOM tree at a
+time: the other is `display: none`, which takes it out of the accessibility tree
+as well, so nothing is announced twice. Breaking the table's own markup with
+`display: block` would have kept one copy and thrown away the row-and-column
+relationships a screen reader depends on.
+
+The tables that really are tabular — the officer roster, the audit trail — keep
+scrolling sideways inside their own box, but that box is now a named region with
+a tab stop, because WCAG 2.1.1 requires a keyboard to be able to scroll
+scrollable content, and on a narrow screen it says in words that there is more to
+the side.
+
+**The page never scrolls sideways.** Verified at 360px on sign-in, the desk, the
+review screen, Settings and the office screen: `document.scrollWidth` equals
+`window.innerWidth` on all of them.
+
+## Choosing a document
+
+The upload control is UX4G's File Upload component, not a bare
+`<input type="file">`. A native file input is a control whose label the browser
+writes, in the browser's own language — so a Hindi screen still read "No file
+chosen" in English — and whose target is far under the 44px minimum.
+
+The native input still does the work; it is only moved out of sight, so the file
+dialogue, the browser's permissions and the accept filter all behave exactly as
+they normally do. Nothing here reimplements a file picker. It has one tab stop:
+the panel is a drop target for a mouse, and dragging is never the only way to do
+anything. Each state — waiting, uploading, received, refused — is written inside
+the panel in words, not carried by the border colour UX4G changes underneath it,
+and the file that was chosen is announced in a live region.
 
 ## The marks are on the document
 

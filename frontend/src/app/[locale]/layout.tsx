@@ -1,12 +1,11 @@
-import type {Metadata} from 'next';
+import type {Metadata, Viewport} from 'next';
 import {notFound} from 'next/navigation';
 import {NextIntlClientProvider} from 'next-intl';
 import {getMessages, getTranslations, setRequestLocale} from 'next-intl/server';
 
 import Ux4gRuntime from '@/components/Ux4gRuntime';
 import Logo from '@/components/Logo';
-import NavLinks from '@/components/NavLinks';
-import LanguageSwitcher from '@/components/LanguageSwitcher';
+import SiteNav from '@/components/SiteNav';
 import {routing, type Locale} from '@/i18n/routing';
 
 // Order matters: the UX4G bundle declares the tokens our own sheet repoints, so
@@ -23,6 +22,22 @@ export async function generateMetadata({
   const t = await getTranslations({locale, namespace: 'app'});
   return {title: `${t('name')} — ${t('tagline')}`, description: t('tagline')};
 }
+
+/**
+ * Declared rather than left to the framework default.
+ *
+ * Without `width=device-width` a phone lays the page out at 980px and then
+ * scales it down, which is what "it is not responsive" looks like from the
+ * outside: correct CSS, unreadable text, every target too small to hit. No
+ * `maximum-scale` and no `user-scalable=no` — WCAG 1.4.4 requires the officer
+ * to be able to zoom, and GIGW 3.0 makes that non-negotiable for a government
+ * service.
+ */
+export const viewport: Viewport = {
+  width: 'device-width',
+  initialScale: 1,
+  viewportFit: 'cover'
+};
 
 export function generateStaticParams() {
   return routing.locales.map((locale) => ({locale}));
@@ -42,13 +57,18 @@ export function generateStaticParams() {
  * before the body paints: the officer's choice is in force on the first frame
  * and there is no flash of the wrong theme.
  *
+ * Light unless the officer has chosen otherwise on the Settings screen. The
+ * device's own preference is read only when "Match my device" was picked there
+ * explicitly — see lib/theme.ts for why a shared counter machine should not
+ * take its appearance from whatever the browser happens to be set to.
+ *
  * Kept as a literal string rather than importing from lib/theme.ts: it has to
  * run before any bundle loads, so it cannot be part of one. The storage key
  * below is therefore written out twice; it must stay equal to
  * THEME_STORAGE_KEY in lib/theme.ts, or the settings screen writes a choice
  * this script never reads.
  */
-const THEME_SCRIPT = `(function(){try{var c=window.localStorage.getItem('sutradhar.theme');var t=(c==='light'||c==='dark')?c:(window.matchMedia('(prefers-color-scheme: dark)').matches?'dark':'light');document.documentElement.setAttribute('data-theme',t)}catch(e){document.documentElement.setAttribute('data-theme','light')}})();`;
+const THEME_SCRIPT = `(function(){try{var c=window.localStorage.getItem('sutradhar.theme');var t=(c==='light'||c==='dark')?c:(c==='system'&&window.matchMedia('(prefers-color-scheme: dark)').matches?'dark':'light');document.documentElement.setAttribute('data-theme',t)}catch(e){document.documentElement.setAttribute('data-theme','light')}})();`;
 
 export default async function LocaleLayout({
   children,
@@ -64,6 +84,7 @@ export default async function LocaleLayout({
   const messages = await getMessages();
   const t = await getTranslations({locale, namespace: 'app'});
   const tf = await getTranslations({locale, namespace: 'footer'});
+  const tn = await getTranslations({locale, namespace: 'nav'});
 
   return (
     <html lang={locale} suppressHydrationWarning>
@@ -77,15 +98,18 @@ export default async function LocaleLayout({
               {t('skipToContent')}
             </a>
 
-            <nav className="ux4g-navbar ux4g-navbar-desktop">
+            {/* The bar itself is never `ux4g-navbar-desktop`: that class is
+                `display:none` below 768px in the shipped CSS, which used to take
+                the whole navigation off the screen on a phone. The desktop /
+                mobile split now happens inside SiteNav, where UX4G intends it. */}
+            <nav className="ux4g-navbar" aria-label={tn('primary')}>
               {/* ux4g-navbar-wrap sets vertical padding only, so it needs a
                   container for the page gutter — otherwise the bar's contents
                   sit flush against the viewport edge. */}
               <div className="ux4g-container ux4g-navbar-wrap">
                 <Logo />
                 <div className="ux4g-navbar-right ux4g-d-flex ux4g-ai-center ux4g-gap-s">
-                  <NavLinks />
-                  <LanguageSwitcher />
+                  <SiteNav />
                 </div>
               </div>
             </nav>

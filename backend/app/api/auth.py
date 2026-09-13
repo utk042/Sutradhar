@@ -86,6 +86,26 @@ def login(
             detail="invalid_credentials",
         )
 
+    # The role they said they were signing in as.
+    #
+    # Checked, never obeyed. The role in force is `user.role`, read from the
+    # database here and re-read on every subsequent request; this comparison can
+    # only refuse a sign-in, never change what the account may do. An officer who
+    # picks "head of department" is turned away, not promoted.
+    #
+    # The position of this check is the whole of its safety. Above the password
+    # check it would answer "is this mobile number a head of department?" to
+    # anyone who asked, with no credential at all — a role oracle over every
+    # account in the service. Below it, the only people who can learn a role are
+    # the ones who just proved they own the account.
+    if payload.role is not None and payload.role != user.role:
+        # No cookie is set on this path: nothing is signed in.
+        logger.info("login_role_mismatch user_id=%s", user.id)
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="role_mismatch",
+        )
+
     # Transparently upgrade a hash whose cost parameters are now out of date.
     if needs_rehash(user.password_hash):
         user.password_hash = hash_password(payload.password)

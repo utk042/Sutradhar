@@ -172,10 +172,20 @@
 }
 
 /* Tables are the one thing allowed to scroll sideways, in their own container,
-   so the page itself never does. */
+   so the page itself never does.
+
+   The container is a tab stop (see components/TableScroll.tsx), because WCAG
+   2.1.1 requires a keyboard to be able to scroll scrollable content — so it
+   also needs a focus ring of its own. UX4G has no focus treatment for a plain
+   scroll region; the outline token is the one every other control uses. */
 .sutradhar-table-scroll {
   overflow-x: auto;
   max-width: 100%;
+}
+
+.sutradhar-table-scroll:focus-visible {
+  outline: var(--ux4g-border-width-md) solid var(--ux4g-text-brand-primary-default);
+  outline-offset: 2px;
 }
 
 /* The findings list carries its own cards; the default list bullets and indent
@@ -186,26 +196,16 @@
   padding: 0;
 }
 
-/* GAP: UX4G ships an Upload component (ux4g-upload) built around drag-and-drop
-   with its own button and file-list markup. This screen needs a single native
-   file input so that the control an officer tabs to is the one that opens the
-   file browser, with no second interactive element beside it. Only spacing and
-   the focus target are set; colour and radius come from tokens. */
-.sutradhar-file-input {
-  display: block;
-  width: 100%;
-  max-width: 32rem;
-  padding: var(--ux4g-padding-s);
-  border: var(--ux4g-border-width-sm) solid var(--ux4g-border-color-neutral-strong);
-  border-radius: var(--ux4g-radius-md);
-  background-color: var(--ux4g-bg-neutral-elevated);
-  color: var(--ux4g-text-neutral-primary);
-  font: inherit;
-}
+/* The drag-and-drop panel, while a file is being dragged over it.
 
-.sutradhar-file-input:focus-visible {
-  outline: var(--ux4g-border-width-md) solid var(--ux4g-focus-outline, var(--ux4g-text-brand-primary-default));
-  outline-offset: 2px;
+   GAP: UX4G's File Upload ships states for default, selecting, scanning,
+   uploaded and error, but none for "a file is hovering over the drop zone".
+   Without it the panel gives no sign that letting go will do anything. Both
+   values are UX4G tokens, and drag-and-drop is never the only way to choose a
+   file — the button beside it is what a keyboard uses. */
+.sutradhar-upload-dragging {
+  border-color: var(--ux4g-border-color-primary-strong);
+  background-color: var(--ux4g-bg-primary);
 }
 
 /* Make the spinner visible.
@@ -396,4 +396,709 @@
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(13rem, 1fr));
   gap: var(--ux4g-gap-column-m, var(--ux4g-padding-m));
+}
+
+/* ---------------------------------------------------------------------------
+   The sign-in screen: the form beside a picture of what the service does.
+
+   GAP: UX4G has no split/hero layout primitive. `ux4g-row` + `ux4g-col-*` is a
+   12-column grid meant for content within a page, and using it here would still
+   need a custom rule to make the two halves equal height and to reorder them
+   between breakpoints. Layout only — every colour, radius and gap below is a
+   UX4G token.
+
+   The form is first in the document and second in the grid: reading order
+   reaches the sign-in field immediately, while a wide screen still shows the
+   picture on the left where the eye starts.
+   --------------------------------------------------------------------------- */
+.sutradhar-auth {
+  width: 100%;
+  max-width: 1140px;
+  margin-inline: auto;
+}
+
+.sutradhar-auth-split {
+  display: grid;
+  grid-template-columns: 1fr;
+  align-items: stretch;
+}
+
+/* Two columns only once there is room for a readable form beside the picture.
+   1024px is the foot of Design.md §8's Tablet mode; below it the grid is one
+   column and the picture follows the form rather than pushing it off screen. */
+@media (min-width: 1024px) {
+  .sutradhar-auth-split {
+    grid-template-columns: 1fr 1fr;
+    gap: 0;
+  }
+}
+
+/* No `grid-row` or `order` anywhere in this layout, deliberately. The
+   illustration is first in the markup and first on the screen at every width —
+   top on a phone, left on a desktop — so nothing a reader meets in one order is
+   presented to them in another. */
+
+/* One box around the whole thing, at every width. The card clips the tinted
+   half to its own radius, so the two panels read as one object rather than as a
+   panel sitting on top of a card. */
+.sutradhar-auth-card {
+  width: 100%;
+  max-width: 62rem;
+  margin-inline: auto;
+  overflow: hidden;
+}
+
+/* The form keeps a readable measure even in half a wide screen. */
+.sutradhar-auth-form {
+  width: 100%;
+  max-width: 32rem;
+  margin-inline: auto;
+  padding: var(--ux4g-padding-xl);
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+}
+
+.sutradhar-auth-visual {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--ux4g-gap-row-m);
+  justify-content: center;
+  padding: var(--ux4g-padding-xl);
+  background-color: var(--ux4g-bg-primary);
+  text-align: center;
+}
+
+/* Measured against --ux4g-bg-primary (#f2efff light, #24145c dark):
+   primary text 15.85:1 light / 15.13:1 dark, secondary 9.17:1 / 12.54:1.
+   Both are well past the 4.5:1 that WCAG 1.4.3 asks of body text. */
+.sutradhar-auth-promise {
+  margin: 0;
+  color: var(--ux4g-text-neutral-primary);
+}
+
+.sutradhar-auth-caption {
+  margin: 0;
+  max-width: 28rem;
+  color: var(--ux4g-text-neutral-secondary);
+}
+
+/* The drawing itself.
+
+   GAP: UX4G ships no illustration set, so this is our own artwork. It carries
+   no colour of its own — `currentColor` takes the brand token below, which
+   measures 7.69:1 on the panel in light and 6.06:1 in dark, so the lines stay
+   visible in both without a second asset. It is `aria-hidden` and says nothing
+   that is not also written beside it. */
+.sutradhar-auth-art {
+  width: 100%;
+  max-width: 22rem;
+  height: auto;
+  color: var(--ux4g-text-brand-primary-default);
+}
+
+.sutradhar-auth-art-paper rect {
+  fill: var(--ux4g-bg-neutral-elevated);
+  stroke: currentColor;
+  stroke-width: 2;
+}
+
+.sutradhar-auth-art-rule rect {
+  fill: var(--ux4g-border-color-neutral-strong);
+  stroke: none;
+}
+
+.sutradhar-auth-art-line path {
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 2;
+  stroke-linecap: round;
+  opacity: 0.55;
+}
+
+.sutradhar-auth-art-check rect {
+  fill: var(--ux4g-bg-neutral-elevated);
+  stroke: currentColor;
+  stroke-width: 2;
+}
+
+.sutradhar-auth-art-tick {
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 2.5;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.sutradhar-auth-art-person circle {
+  fill: currentColor;
+  stroke: none;
+}
+
+.sutradhar-auth-art-person-head {
+  fill: var(--ux4g-bg-neutral-elevated) !important;
+  stroke: none;
+}
+
+/* ---------------------------------------------------------------------------
+   The navigation menu on a narrow screen.
+
+   UX4G's Drawer supplies the panel, the overlay, the slide and the body scroll
+   lock. Only three things are added:
+   --------------------------------------------------------------------------- */
+
+/* 1. The drawer belongs to the mobile navbar slot, which UX4G hides above
+      768px. The drawer itself is a fixed-position element outside that slot, so
+      without this it would survive a resize and sit open over a desktop page.
+      Matches the breakpoint in the shipped `.ux4g-navbar-desktop` rule exactly. */
+@media (min-width: 769px) {
+  .sutradhar-menu-drawer,
+  .sutradhar-menu-overlay {
+    display: none;
+  }
+}
+
+/* 2. The links stack full width, each its own row, so every one of them clears
+      the 44px target on a phone. UX4G's navbar link list is a horizontal row
+      and has no stacked form. */
+.sutradhar-menu-list {
+  display: flex;
+  flex-direction: column;
+  gap: var(--ux4g-gap-row-xs);
+}
+
+.sutradhar-menu-list .ux4g-btn {
+  justify-content: flex-start;
+}
+
+/* 3. The drawer is never wider than the screen it is on. */
+.sutradhar-menu-drawer {
+  max-width: min(20rem, 85vw);
+}
+
+/* ---------------------------------------------------------------------------
+   Responsive corrections.
+   --------------------------------------------------------------------------- */
+
+/* Nothing in this service may scroll sideways. Tables, document pages and code
+   scroll inside their own containers; the page itself does not. */
+html,
+body {
+  overflow-x: hidden;
+}
+
+/* A long filename or a document number with no spaces in it would otherwise
+   push a table cell — and with it the whole row — past the screen. */
+.sutradhar-break-word {
+  overflow-wrap: anywhere;
+  word-break: break-word;
+}
+
+/* Headings set at desktop sizes are too large for a 360px screen: a single
+   long word can outrun the viewport. The type scale stays UX4G's — this only
+   steps `Heading/L` down to `Heading/M` and `Heading/S` to `Heading/XS`, both
+   of which are UX4G styles, at the top of Design.md §8's Mobile mode. */
+@media (max-width: 480px) {
+  .sutradhar-shell h1.ux4g-heading-l-strong {
+    font-size: var(--ux4g-fs-24);
+    line-height: var(--ux4g-lh-28);
+  }
+
+  .sutradhar-shell h2.ux4g-heading-s-strong {
+    font-size: var(--ux4g-fs-16);
+    line-height: var(--ux4g-lh-20);
+  }
+}
+
+/* Decision and form buttons go full width rather than shrinking below a
+   comfortable target, and stop sitting two-to-a-row on a narrow screen. UX4G's
+   own File Upload does the same thing at 767px; this applies it to the rows we
+   build ourselves. */
+@media (max-width: 600px) {
+  .sutradhar-stack-narrow {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .sutradhar-stack-narrow > .ux4g-btn {
+    width: 100%;
+  }
+}
+
+/* The breadcrumb's own list rule sets `flex-wrap` and `gap` but never
+   `display`, so the gap does nothing on its own; the UX4G flex utilities on the
+   list supply it. This only keeps the trail from pushing the page sideways when
+   a document reference is long. */
+.sutradhar-breadcrumb {
+  max-width: 100%;
+  overflow-wrap: anywhere;
+}
+
+/* ---------------------------------------------------------------------------
+   Wide-screen table, narrow-screen cards.
+
+   GAP: `ux4g-table-responsive` is `overflow-x: auto` and nothing more, so a
+   five-column table on a 360px screen hides its last three columns — including
+   the status and the button that opens the file — inside a container with no
+   visible sign that it scrolls. UX4G ships no stacked or card form of Table.
+
+   Exactly one of the pair is rendered at any width. `display: none` takes the
+   other out of the accessibility tree as well, so nothing is read out twice.
+   1024px is the top of Design.md §8's Mobile mode, where the grid drops to four
+   columns and a wide table stops fitting.
+   --------------------------------------------------------------------------- */
+.sutradhar-only-wide {
+  display: none;
+}
+
+.sutradhar-only-narrow {
+  display: grid;
+  gap: var(--ux4g-gap-row-s);
+}
+
+@media (min-width: 1024px) {
+  .sutradhar-only-wide {
+    display: block;
+  }
+
+  .sutradhar-only-narrow {
+    display: none;
+  }
+}
+
+/* ---------------------------------------------------------------------------
+   The sign-in screen sits in the middle of the window rather than against the
+   navbar, on any screen tall enough to have room to spare. `100dvh` accounts
+   for a phone browser's collapsing address bar, which `100vh` does not.
+   --------------------------------------------------------------------------- */
+.sutradhar-auth {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  min-height: calc(100dvh - 16rem);
+}
+
+/* The upload panel is one control on a page whose real content is the list of
+   files below it. Left unbounded it grows to the full 1140px measure and takes
+   the top half of the desk. UX4G's Upload is `inline-size: 100%` by design and
+   has no width variant, so the ceiling is set here, on our own wrapper. */
+.sutradhar-picker {
+  width: 100%;
+  max-width: 38rem;
+}
+
+/* ---------------------------------------------------------------------------
+   The officer's list of what they decided.
+
+   GAP: UX4G ships Card but nothing that stacks cards with a consistent gap, and
+   nothing that puts a body of text beside an action inside one. Layout only —
+   the cards are `ux4g-card`, and every gap is a UX4G token. The row goes to one
+   column on a narrow screen rather than squeezing the link against the text.
+   --------------------------------------------------------------------------- */
+.sutradhar-decision-list {
+  display: grid;
+  gap: var(--ux4g-gap-row-s);
+}
+
+.sutradhar-decision-row {
+  display: flex;
+  flex-direction: column;
+  gap: var(--ux4g-gap-row-xs);
+  align-items: flex-start;
+}
+
+@media (min-width: 640px) {
+  .sutradhar-decision-row {
+    flex-direction: row;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--ux4g-gap-column-m);
+  }
+}
+
+/* ---------------------------------------------------------------------------
+   Target size on the password reveal button — accessibility fix.
+
+   GAP, and a conflict inside the contract worth stating plainly. The shipped
+   rule
+
+     .ux4g-input-lg .ux4g-input-action-btn { height: 1.25rem; width: 1.25rem }
+
+   makes every in-field action button a 20px target. Design.md §9 sets the
+   baseline at 44x44, and WCAG 2.2's 2.5.8 a hard floor of 24x24 — so the
+   component as shipped cannot meet the contract's own accessibility
+   requirement. Worth reporting upstream: the fix belongs in the package, where
+   every consumer would get it.
+
+   So nothing here overrides anything. The button keeps the exact size UX4G
+   gives it — no height, no width, no padding is set below — and only the *hit
+   area* grows, which is what WCAG measures. A transparent pseudo-element does
+   it, so no layout moves, no sibling shifts, and the field looks pixel for
+   pixel as the design system drew it.
+
+   The arithmetic, because the field clips: `.ux4g-input` at `lg` is 3rem (48px)
+   tall with `overflow: hidden`, and centres its children. The shipped button is
+   1.25rem (20px), so an inset of -0.75rem (12px) on each side gives
+   20 + 12 + 12 = 44px. Centred in 48px that leaves 2px above and below, inside
+   the clip.
+
+   Verified in a browser: the measured target is 44x44 and the button itself is
+   still the 20x20 UX4G ships.
+   --------------------------------------------------------------------------- */
+.sutradhar-reveal {
+  position: relative;
+}
+
+.sutradhar-reveal::after {
+  content: '';
+  position: absolute;
+  inset: -0.75rem;
+}
+
+.sutradhar-reveal:focus-visible {
+  outline: var(--ux4g-border-width-md) solid var(--ux4g-text-brand-primary-default);
+  outline-offset: 2px;
+}
+
+/* ---------------------------------------------------------------------------
+   A select field.
+
+   GAP: the shipped package has no Select. The `.ux4g-select-*` classes in the
+   stylesheet are `user-select` utilities, and the Select in the legacy
+   documentation has no equivalent in `ux4g-web-components@2.1.0` —
+   grep-verified against the compiled stylesheet.
+
+   UX4G's Dropdown is not a substitute here. It is driven by the global runtime,
+   which writes `valueNode.textContent` and toggles classes on the element
+   directly; React owns that subtree and overwrites both on its next render, so
+   the two would be fighting over the same DOM. A native select also opens the
+   operating system's own picker on a phone, which is bigger and more familiar
+   than anything rebuilt inside a page.
+
+   So the control is a native `<select>` composed into the Input component's own
+   shell: `.ux4g-input` supplies the border, background, radius, padding and
+   focus ring, and `.ux4g-input-input` the typography. Everything below only
+   removes the browser's default appearance so the field matches the two above
+   it. No colour, spacing or type value is written literally.
+   --------------------------------------------------------------------------- */
+.sutradhar-select {
+  appearance: none;
+  border: 0;
+  outline: none;
+  cursor: pointer;
+  /* The chevron beside it is decoration in the actions slot, so the text must
+     not run underneath it. */
+  padding-inline-end: var(--ux4g-padding-2xs);
+  color: var(--ux4g-text-neutral-primary);
+}
+
+/* The placeholder reads as the question, not as an answer already given.
+   `:invalid` is deliberately not used: the select is not marked `required`,
+   because this form validates in one place and says what is wrong in words
+   rather than leaving it to the browser. */
+.sutradhar-select:has(option[value='']:checked) {
+  color: var(--ux4g-text-neutral-tertiary);
+}
+
+/* A native option list is drawn by the operating system and takes its colours
+   from the page rather than from the field. Without this, a dark-theme page
+   hands the menu a dark background and the browser's own default dark text. */
+.sutradhar-select option {
+  background-color: var(--ux4g-bg-neutral-elevated);
+  color: var(--ux4g-text-neutral-primary);
+}
+
+/* ===========================================================================
+   Dashboards: tiles and charts.
+
+   GAP: UX4G ships Card, and nothing else needed here. It has no stat tile, no
+   chart, no bar and no column — and the brief rules out a charting library, so
+   every mark below is drawn in plain CSS. All of it is layout and geometry;
+   every colour, radius, spacing and type value is a UX4G token.
+
+   The colour decisions are recorded beside the components that use them. In
+   short: counts wear the brand hue because a count is neither good nor bad;
+   states wear UX4G's reserved `--ux4g-text-status-*` steps, which measure 9.4,
+   9.4 and 5.4 against a light card and 11.6, 11.6 and 13.1 against a dark one —
+   all past the 3:1 a mark needs. The `--ux4g-bg-*-strong` steps were the
+   obvious choice and were rejected: the warning one sits at 2.4:1 on white.
+
+   Status colour is never the only signal anywhere below. Every tile and every
+   bar carries its own words, and the two states that collapse under colour
+   blindness — the green and the red — are never drawn touching.
+   =========================================================================== */
+
+/* One tone per element, set once and consumed by the tile and the bars alike.
+   `--tone` is the mark colour; `--tone-wash` the track or tint behind it. */
+.sutradhar-tone-brand {
+  --tone: var(--ux4g-text-brand-primary-default);
+  --tone-wash: var(--ux4g-bg-primary);
+}
+
+.sutradhar-tone-success {
+  --tone: var(--ux4g-text-status-success);
+  --tone-wash: var(--ux4g-bg-success-subtle);
+}
+
+.sutradhar-tone-warning {
+  --tone: var(--ux4g-text-status-warning);
+  --tone-wash: var(--ux4g-bg-warning-subtle);
+}
+
+.sutradhar-tone-danger {
+  --tone: var(--ux4g-text-status-error);
+  --tone-wash: var(--ux4g-bg-error-subtle);
+}
+
+.sutradhar-tone-neutral {
+  --tone: var(--ux4g-text-neutral-secondary);
+  --tone-wash: var(--ux4g-bg-neutral-soft);
+}
+
+/* --- Stat tiles ---------------------------------------------------------- */
+
+/* A coloured rule down the leading edge rather than a coloured card: a filled
+   tile would make four of them shout at once and leave the figure competing
+   with its own background. The rule is 4px, which reads at a glance and stays
+   out of the way of the text. */
+.sutradhar-stat {
+  border-inline-start: var(--ux4g-border-width-xl) solid var(--tone);
+  height: 100%;
+}
+
+.sutradhar-stat-head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: var(--ux4g-gap-column-s);
+  margin-block-end: var(--ux4g-margin-2xs);
+}
+
+/* Paired with `.ux4g-icon-outlined`, whose bare rule in the shipped CSS sets
+   `color: var(--ux4g-text-neutral-inverse)` — near-white on a white card. Two
+   classes beat one, so the tone wins it back. */
+.sutradhar-stat-icon.ux4g-icon-outlined {
+  color: var(--tone);
+  font-size: var(--ux4g-fs-24);
+  height: var(--ux4g-size-24);
+  width: var(--ux4g-size-24);
+  flex-shrink: 0;
+}
+
+/* The figure. Proportional digits, not `tabular-nums`: equal-width digits make
+   a number like 121 look loose at this size. Tabular belongs in the table view,
+   where columns have to line up. */
+.sutradhar-stat-value {
+  margin: 0;
+  font-size: var(--ux4g-fs-32);
+  line-height: var(--ux4g-lh-36);
+  font-weight: var(--ux4g-font-weight-semibold);
+  color: var(--ux4g-text-neutral-primary);
+}
+
+/* --- The column chart ---------------------------------------------------- */
+
+.sutradhar-chart {
+  margin: 0;
+}
+
+.sutradhar-columns {
+  display: flex;
+  align-items: flex-end;
+  gap: var(--ux4g-gap-column-xs);
+}
+
+.sutradhar-column {
+  flex: 1 1 0;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--ux4g-gap-row-2xs);
+}
+
+/* The plot band. Fixed so every column shares one scale, and sized to hold the
+   bars only — the caps and the day names are siblings outside it, so the axis
+   band can never be the thing that gets cut off. */
+.sutradhar-column-track {
+  width: 100%;
+  height: 7.5rem;
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  /* The baseline: solid, hairline, one step off the surface. Never dashed. */
+  border-block-end: var(--ux4g-border-width-sm) solid var(--ux4g-border-color-neutral-default);
+}
+
+/* Thin marks. Capped at 24px so a wide card leaves air in the slot rather than
+   growing a slab, with a rounded top and a square foot on the baseline. */
+.sutradhar-column-bar {
+  width: 100%;
+  max-width: 1.5rem;
+  border-start-start-radius: var(--ux4g-radius-xs);
+  border-start-end-radius: var(--ux4g-radius-xs);
+  background-color: var(--ux4g-bg-primary-subtle);
+  transition: background-color 120ms ease-out;
+}
+
+/* A day with a count of one still has to be visible, so a bar never rounds
+   away to nothing. A day with a count of none must show no bar at all — a
+   two-pixel stub reads as "one" at a glance and turns a quiet day into a slow
+   one. The track keeps the slot either way, so the column still exists. */
+.sutradhar-column-bar {
+  min-height: 3px;
+}
+
+.sutradhar-column-none {
+  min-height: 0;
+}
+
+/* Emphasis, and only where it means something: the busiest day, and today.
+   Everything else is a quiet wash of the same hue — which is what makes the
+   two that are picked out read as picked out. */
+.sutradhar-column-peak,
+.sutradhar-column-today {
+  background-color: var(--ux4g-bg-primary-strong);
+}
+
+.sutradhar-column:hover .sutradhar-column-bar {
+  background-color: var(--ux4g-bg-primary-strong);
+}
+
+.sutradhar-column-cap {
+  font-size: var(--ux4g-fs-12);
+  line-height: var(--ux4g-lh-16);
+  font-weight: var(--ux4g-font-weight-semibold);
+  color: var(--ux4g-text-neutral-primary);
+}
+
+.sutradhar-column-day {
+  font-size: var(--ux4g-fs-11);
+  line-height: var(--ux4g-lh-14);
+  color: var(--ux4g-text-neutral-secondary);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 100%;
+}
+
+.sutradhar-column-day-now {
+  font-weight: var(--ux4g-font-weight-semibold);
+  color: var(--ux4g-text-neutral-primary);
+}
+
+/* --- The status bars ----------------------------------------------------- */
+
+.sutradhar-bars {
+  display: grid;
+  gap: var(--ux4g-gap-row-s);
+}
+
+/* Label, bar, count. One column each on a phone would stack the count under the
+   bar and lose the association, so the row keeps its shape and the label is
+   allowed to wrap instead. */
+.sutradhar-bar-row {
+  display: grid;
+  grid-template-columns: minmax(7rem, auto) 1fr auto;
+  align-items: center;
+  gap: var(--ux4g-gap-column-s);
+}
+
+.sutradhar-bar-label {
+  display: flex;
+  align-items: center;
+  gap: var(--ux4g-gap-column-2xs);
+  font-size: var(--ux4g-fs-14);
+  line-height: var(--ux4g-lh-18);
+  color: var(--ux4g-text-neutral-primary);
+}
+
+/* Same shipped-CSS workaround as the tile icon: two classes beat the bare one
+   that would colour this `--ux4g-text-neutral-inverse`. */
+.sutradhar-bar-icon.ux4g-icon-outlined {
+  color: var(--tone);
+  font-size: var(--ux4g-fs-18);
+  height: var(--ux4g-size-18);
+  width: var(--ux4g-size-18);
+  flex-shrink: 0;
+}
+
+/* The track is a step off the surface, so a count of zero is still a row rather
+   than a gap where a row should be. */
+.sutradhar-bar-track {
+  height: var(--ux4g-size-12);
+  border-radius: var(--ux4g-radius-full);
+  background-color: var(--tone-wash);
+  overflow: hidden;
+}
+
+.sutradhar-bar-fill {
+  display: block;
+  height: 100%;
+  min-width: 2px;
+  border-radius: var(--ux4g-radius-full);
+  background-color: var(--tone);
+}
+
+/* The count sits outside the fill, at the tip, so a short bar can never clip
+   its own label. */
+.sutradhar-bar-count {
+  font-size: var(--ux4g-fs-14);
+  line-height: var(--ux4g-lh-18);
+  font-weight: var(--ux4g-font-weight-semibold);
+  color: var(--ux4g-text-neutral-primary);
+  min-width: 2ch;
+  text-align: end;
+}
+
+/* Columns of figures line up; standalone figures do not need to. */
+.sutradhar-figures {
+  font-variant-numeric: tabular-nums;
+}
+
+/* The table behind each chart. */
+.sutradhar-chart-table > summary {
+  cursor: pointer;
+  color: var(--ux4g-text-link-default-default);
+}
+
+.sutradhar-chart-table > summary:focus-visible {
+  outline: var(--ux4g-border-width-md) solid var(--ux4g-text-brand-primary-default);
+  outline-offset: 2px;
+}
+
+/* The two charts sit side by side where there is room and stack where there is
+   not. UX4G's 12-column grid could do this, but not with equal heights and not
+   without a rule of our own for the breakpoint, so it is one line here. */
+.sutradhar-chart-row {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: var(--ux4g-gap-column-m);
+}
+
+@media (min-width: 900px) {
+  .sutradhar-chart-row {
+    grid-template-columns: 3fr 2fr;
+    align-items: start;
+  }
+}
+
+/* The menu and close buttons in the navigation bar.
+
+   `ux4g-icon-btn-lg` is 48px square, so the target needs nothing from us. Only
+   the icon's colour does: paired with `ux4g-icon-outlined`, whose bare rule in
+   the shipped CSS sets `color: var(--ux4g-text-neutral-inverse)` — near-white,
+   invisible on this bar. Two classes beat one and hand it back to the button,
+   which is already carrying the right one. */
+.sutradhar-nav-icon.ux4g-icon-outlined {
+  color: currentColor;
+  font-size: var(--ux4g-fs-24);
+  height: var(--ux4g-size-24);
+  width: var(--ux4g-size-24);
+}
+
+.sutradhar-menu-button:focus-visible {
+  outline: var(--ux4g-border-width-md) solid var(--ux4g-text-brand-primary-default);
+  outline-offset: 2px;
 }

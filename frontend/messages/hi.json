@@ -8,8 +8,7 @@
   "language": {
     "label": "भाषा",
     "en": "English",
-    "hi": "हिन्दी",
-    "switchLabel": "भाषा बदलें"
+    "hi": "हिन्दी"
   },
   "login": {
     "title": "साइन इन करें",
@@ -25,17 +24,26 @@
       "passwordRequired": "अपना पासवर्ड दर्ज करें।",
       "invalid_credentials": "That mobile number and password do not match. Check both and try again.",
       "network": "Could not reach the system. Check your connection and try again.",
-      "unexpected": "Something went wrong at our end. Please try again in a moment."
-    }
+      "unexpected": "Something went wrong at our end. Please try again in a moment.",
+      "roleRequired": "चुनें कि आप अधिकारी के रूप में साइन इन कर रहे हैं या विभागाध्यक्ष के रूप में।",
+      "role_mismatch": "आपका मोबाइल नंबर और पासवर्ड सही हैं, परंतु यह खाता आपके चुने गए रूप में पंजीकृत नहीं है। दूसरा विकल्प चुनकर फिर साइन इन करें।"
+    },
+    "visualCaption": "तीन जाँचें एक ही समय पर अभिलेखों से मिलान करती हैं। उन्हें जो कुछ मिलता है वह एकत्र करके आपको सौंप दिया जाता है। जब तक आप निर्णय नहीं लेते, कुछ भी तय नहीं होता।",
+    "visualTitle": "जाँच प्रणाली करती है। निर्णय आप करते हैं।",
+    "showPassword": "पासवर्ड दिखाएँ",
+    "roleLabel": "किस रूप में साइन इन कर रहे हैं",
+    "roleHint": "इस कार्यालय में आप जिस रूप में पंजीकृत हैं, वह चुनें।",
+    "roles": {
+      "officer": "अधिकारी",
+      "dept_head": "विभागाध्यक्ष"
+    },
+    "hidePassword": "पासवर्ड छिपाएँ",
+    "rolePlaceholder": "एक चुनें"
   },
   "home": {
     "title": "आपका डेस्क",
     "signedInAs": "{name} के रूप में साइन इन",
     "signOut": "साइन आउट",
-    "upload": "दस्तावेज़ अपलोड करें",
-    "uploading": "अपलोड हो रहा है…",
-    "chooseFile": "अपलोड करने के लिए दस्तावेज़ चुनें",
-    "fileHint": "PDF, PNG या JPEG, अधिकतम 10 MB",
     "pendingTitle": "आपकी प्रतीक्षा में दस्तावेज़",
     "emptyTitle": "कुछ भी प्रतीक्षारत नहीं",
     "emptyBody": "दस्तावेज़ अपलोड करने पर, जाँच पूरी होते ही वह यहाँ दिखाई देगा।",
@@ -126,7 +134,8 @@
     "zoomIn": "बड़ा",
     "zoomOut": "छोटा",
     "zoomFit": "पूरा पृष्ठ",
-    "zoomLevel": "{percent}%"
+    "zoomLevel": "{percent}%",
+    "crumb": "फ़ाइल {reference}"
   },
   "finding": {
     "verified": "सत्यापित",
@@ -158,7 +167,8 @@
     "reasonGiven": "दिया गया कारण",
     "noteGiven": "आपकी टिप्पणी",
     "auditTitle": "यह निर्णय अंकेक्षण लॉग में दर्ज कर लिया गया है।",
-    "backToDesk": "अपने डेस्क पर लौटें"
+    "backToDesk": "अपने डेस्क पर लौटें",
+    "crumb": "निर्णय"
   },
   "upload": {
     "errors": {
@@ -169,7 +179,17 @@
       "upload_unreadable": "That file could not be read. Choose another one.",
       "network": "Could not reach the system. Check your connection and try again.",
       "unexpected": "Something went wrong at our end. Please try again in a moment."
-    }
+    },
+    "heading": "अपलोड करने के लिए दस्तावेज़ चुनें",
+    "hint": "PDF, PNG या JPEG, अधिकतम 10 MB",
+    "or": "या",
+    "choose": "फ़ाइल चुनें",
+    "chooseAnother": "दूसरी फ़ाइल चुनें",
+    "uploading": "अपलोड हो रहा है…",
+    "uploadingHint": "कृपया प्रतीक्षा करें। यह पृष्ठ बंद न करें।",
+    "received": "प्राप्त हुआ",
+    "notSent": "यह फ़ाइल नहीं भेजी गई",
+    "fileSize": "{size} MB"
   },
   "checks": {
     "verification": "अभिलेखों से मिलान",
@@ -250,7 +270,12 @@
   },
   "nav": {
     "desk": "आपका डेस्क",
-    "dashboard": "आपका कार्यालय"
+    "dashboard": "आपका कार्यालय",
+    "menu": "मेन्यू",
+    "closeMenu": "बंद करें",
+    "breadcrumb": "आप कहाँ हैं",
+    "primary": "सेवा नेविगेशन",
+    "work": "आपका काम"
   },
   "settings": {
     "title": "सेटिंग्स",
@@ -265,5 +290,36 @@
     },
     "languageHint": "आपका चयन पते में रहता है, इसलिए सहेजा या साझा किया गया पृष्ठ उसी भाषा में खुलता है।",
     "open": "सेटिंग्स"
+  },
+  "table": {
+    "scrollHint": "बाकी हिस्सा देखने के लिए इस तालिका को बगल में सरकाएँ।"
+  },
+  "work": {
+    "title": "आपका काम",
+    "subtitle": "आपके लिए क्या प्रतीक्षा में है, और आपने क्या तय किया।",
+    "statPending": "आपके निर्णय की प्रतीक्षा में",
+    "statDecidedToday": "पिछले एक दिन में आपने तय किए",
+    "statAverage": "निर्णय लेने में आपका औसत समय",
+    "statFlags": "प्रतीक्षारत फ़ाइलों में चिह्नित बातें",
+    "goToWaiting": "{count, plural, one {प्रतीक्षारत फ़ाइल पर जाएँ} other {प्रतीक्षारत # फ़ाइलों पर जाएँ}}",
+    "recentTitle": "आपने हाल में क्या तय किया",
+    "recentEmptyTitle": "अभी कुछ तय नहीं हुआ",
+    "recentEmptyBody": "जब आप किसी फ़ाइल को स्वीकृत या अस्वीकृत करेंगे, वह यहाँ अपने निर्णय के अभिलेख के साथ दिखाई देगी।",
+    "openDecision": "अभिलेख देखें",
+    "decidedTotal": "{count, plural, =0 {आपने अभी तक कोई फ़ाइल तय नहीं की है।} one {आपने कुल एक फ़ाइल तय की है।} other {आपने कुल # फ़ाइलें तय की हैं।}}",
+    "loadFailed": "आपके आँकड़े अभी नहीं आ सके। आपकी फ़ाइलों पर इसका कोई असर नहीं है — काम जारी रखने के लिए अपना डेस्क खोलें, और यह स्क्रीन थोड़ी देर बाद फिर देखें।"
+  },
+  "charts": {
+    "decisionsTitle": "इस सप्ताह के निर्णय",
+    "decisionsSubtitle": "{count, plural, =0 {पिछले सात दिनों में कुछ तय नहीं हुआ।} one {पिछले सात दिनों में एक निर्णय।} other {पिछले सात दिनों में # निर्णय।}}",
+    "decisionsEmpty": "पिछले सात दिनों में कुछ तय नहीं हुआ। जैसे-जैसे निर्णय होंगे, दिन यहाँ दिखाई देंगे।",
+    "findingsTitle": "जाँचों में क्या मिला",
+    "findingsSubtitle": "{count, plural, =0 {अभी कुछ जाँचा नहीं गया।} one {जाँचों ने एक बात देखी।} other {जाँचों ने # बातें देखीं।}}",
+    "findingsEmpty": "अभी कुछ जाँचा नहीं गया। किसी दस्तावेज़ की जाँच होने पर परिणाम यहाँ दिखाई देंगे।",
+    "showTable": "इन आँकड़ों को तालिका में देखें",
+    "colDay": "दिन",
+    "colDecided": "निर्णय",
+    "colResult": "परिणाम",
+    "colCount": "कितने"
   }
 }

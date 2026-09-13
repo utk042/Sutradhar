@@ -60,10 +60,26 @@ async function request<T>(
   return {ok: true, data: (await response.json()) as T};
 }
 
-export function login(mobileNumber: string, password: string) {
+export type DeclaredRole = 'officer' | 'dept_head';
+
+/**
+ * Sign in.
+ *
+ * `role` is what the officer said they were on the sign-in screen. It grants
+ * nothing: the server compares it with the role on the account and refuses the
+ * sign-in if they disagree — it is never written to the session and never asked
+ * again. The role in force always comes from the database, re-read on every
+ * request. Sending a different value here cannot make the browser anything it
+ * was not already.
+ */
+export function login(
+  mobileNumber: string,
+  password: string,
+  role: DeclaredRole
+) {
   return request<CurrentUser>('/auth/login', {
     method: 'POST',
-    body: JSON.stringify({mobile_number: mobileNumber, password})
+    body: JSON.stringify({mobile_number: mobileNumber, password, role})
   });
 }
 
@@ -198,12 +214,32 @@ export interface Officer {
   decided: number;
 }
 
+// --- What the two dashboards chart ----------------------------------------
+//
+// One pair of shapes, drawn twice: over a whole department for a head, over one
+// desk for an officer. The backend derives both from the same definitions, so
+// the two screens cannot drift apart.
+
+export interface DayCount {
+  /** ISO date, oldest first. */
+  day: string;
+  decided: number;
+}
+
+export interface FindingTally {
+  verified: number;
+  mismatch: number;
+  unverifiable: number;
+}
+
 export interface DepartmentStats {
   processed_today: number;
   average_seconds: number | null;
   flags_raised: number;
   pending_now: number;
   officers: number;
+  daily: DayCount[];
+  findings: FindingTally;
 }
 
 export interface AuditRow {
@@ -221,6 +257,39 @@ export interface AuditPage {
   total: number;
   chain_intact: boolean;
 }
+
+// --- An officer's own work -------------------------------------------------
+
+export interface DecidedDocument {
+  id: number;
+  public_ref: string;
+  status: DocumentStatus;
+  reviewed_at: string | null;
+}
+
+export interface WorkSummary {
+  pending_now: number;
+  decided_today: number;
+  decided_total: number;
+  average_seconds: number | null;
+  flags_waiting: number;
+  daily: DayCount[];
+  findings: FindingTally;
+  recent: DecidedDocument[];
+}
+
+/**
+ * What is on this officer's desk, and what they have decided.
+ *
+ * Scoped on the server by the same rule as every other document route — an
+ * officer's own desk, a head's whole department — so there is nothing to pass
+ * and nothing the browser could widen.
+ */
+export function getMyWork() {
+  return request<WorkSummary>('/work');
+}
+
+// --- Managing a department -------------------------------------------------
 
 export function getDepartment() {
   return request<Department>('/department');

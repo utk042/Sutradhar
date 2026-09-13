@@ -4,6 +4,10 @@ from datetime import datetime
 
 from pydantic import BaseModel, ConfigDict, Field
 
+# The head's charts and an officer's are the same two shapes, drawn over a
+# different set of files. One definition, so the two screens cannot drift.
+from app.schemas.work import DayCount, FindingTally
+
 
 class DepartmentOut(BaseModel):
     model_config = ConfigDict(from_attributes=True)
@@ -50,13 +54,17 @@ class Reassign(BaseModel):
 
 
 class DepartmentStats(BaseModel):
-    """The three numbers on the dashboard, plus what they are drawn from."""
+    """The numbers on the head's dashboard, plus what the charts are drawn from."""
 
     processed_today: int
     average_seconds: float | None
     flags_raised: int
     pending_now: int
     officers: int
+    #: Day by day over the chart window, oldest first, empty days included.
+    daily: list[DayCount]
+    #: How the checks came out across this department's files.
+    findings: FindingTally
 
 
 class AuditRowOut(BaseModel):
