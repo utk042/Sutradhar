@@ -64,6 +64,19 @@ class DocumentDetail(DocumentSummary):
     override_note: str | None = None
 
 
+class SupersedeDecision(BaseModel):
+    """A head of department replacing a decision made in their office.
+
+    A reason is always required, unlike an ordinary decision where it is only
+    required to reject: this overrules a colleague, and the record should say
+    why.
+    """
+
+    decision: Literal["approved", "rejected"]
+    reason: str = Field(min_length=1, max_length=2000)
+    override_note: str | None = Field(default=None, max_length=2000)
+
+
 class ReviewDecision(BaseModel):
     """The officer's decision. The only thing that moves a document's status."""
 

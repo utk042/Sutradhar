@@ -23,6 +23,7 @@ from fastapi.responses import StreamingResponse
 from sqlalchemy.orm import Session
 
 from app.api.deps import CurrentUserDep
+from app.api.scope import load_visible_document
 from app.db.app import get_app_session
 from app.models.document import Document
 from app.services.events import broker
@@ -48,9 +49,7 @@ async def stream_events(
     user: CurrentUserDep,
     session: Annotated[Session, Depends(get_app_session)],
 ) -> StreamingResponse:
-    document = session.get(Document, document_id)
-    if document is None:
-        raise HTTPException(status.HTTP_404_NOT_FOUND, detail="document_not_found")
+    document = load_visible_document(session, user, document_id)
 
     initial_status = document.status
     already_settled = initial_status in SETTLED

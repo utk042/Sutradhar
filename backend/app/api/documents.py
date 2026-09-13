@@ -13,27 +13,16 @@ from sqlalchemy import select
 from sqlalchemy.orm import Session
 
 from app.api.deps import CurrentUserDep
-from app.db.app import AppSessionLocal, get_app_session
+from app.api.scope import load_visible_document, visible_documents
+from app.db.app import get_app_session
 from app.models.document import Document, ExtractedField
 from app.models.finding import AgentRun, Finding as FindingRow
 from app.schemas.document import CheckRunOut, DocumentDetail, DocumentSummary, FindingOut
 from app.services import audit, storage
-from app.services.review import run_checks_for_document
+from app.services.review import run_checks_in_background
 
 router = APIRouter(prefix="/documents", tags=["documents"])
 logger = logging.getLogger(__name__)
-
-
-async def _run_checks(document_id: int) -> None:
-    """Background task. Opens its own session — the request's is long gone."""
-    with AppSessionLocal() as session:
-        document = session.get(Document, document_id)
-        if document is None:
-            return
-        try:
-            await run_checks_for_document(session, document)
-        except Exception:
-            logger.exception("background checks failed for document %s", document_id)
 
 
 @router.post("", response_model=DocumentSummary, status_code=status.HTTP_201_CREATED)
@@ -60,6 +49,10 @@ async def upload(
         sha256=stored.sha256,
         status="uploaded",
         uploaded_by=user.id,
+        # Taken from the uploader. A document belongs to the office it was
+        # uploaded in, and stays there even if that person later moves.
+        department_id=user.department_id,
+        assigned_to=user.id,
     )
     session.add(document)
     session.commit()
@@ -76,7 +69,7 @@ async def upload(
     session.commit()
 
     logger.info("document %s uploaded by user %s", document.id, user.id)
-    background.add_task(_run_checks, document.id)
+    background.add_task(run_checks_in_background, document.id)
     return DocumentSummary.model_validate(document)
 
 
@@ -90,17 +83,15 @@ def list_documents(
     # relative order to the database. The officer's newest file must be at the
     # top every time, not usually.
     rows = session.scalars(
-        select(Document)
+        visible_documents(user)
         .order_by(Document.uploaded_at.desc(), Document.id.desc())
         .limit(100)
     ).all()
     return [DocumentSummary.model_validate(r) for r in rows]
 
 
-def _load_detail(session: Session, document_id: int) -> DocumentDetail:
-    document = session.get(Document, document_id)
-    if document is None:
-        raise HTTPException(status.HTTP_404_NOT_FOUND, detail="document_not_found")
+def _load_detail(session: Session, user, document_id: int) -> DocumentDetail:
+    document = load_visible_document(session, user, document_id)
 
     findings = session.scalars(
         select(FindingRow).where(FindingRow.document_id == document_id).order_by(FindingRow.id)
@@ -131,7 +122,7 @@ def get_document(
     user: CurrentUserDep,
     session: Annotated[Session, Depends(get_app_session)],
 ) -> DocumentDetail:
-    return _load_detail(session, document_id)
+    return _load_detail(session, user, document_id)
 
 
 @router.get("/{document_id}/file")
@@ -145,9 +136,7 @@ def get_document_file(
     Addressed by database ID. The filename on disk is read from the row, never
     from the request, so there is no user-supplied path anywhere in this route.
     """
-    document = session.get(Document, document_id)
-    if document is None:
-        raise HTTPException(status.HTTP_404_NOT_FOUND, detail="document_not_found")
+    document = load_visible_document(session, user, document_id)
     try:
         data = storage.read_stored(document.stored_filename)
     except (storage.UploadRejected, OSError):

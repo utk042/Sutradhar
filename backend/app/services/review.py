@@ -18,6 +18,7 @@ from app.agents.graph import run_pipeline
 from app.config import get_settings
 from contextlib import contextmanager
 
+from app.db.app import AppSessionLocal
 from app.db.readonly import readonly_session_scope
 from app.models.document import Document
 from app.models.finding import AgentRun, Finding as FindingRow
@@ -31,6 +32,25 @@ from app.services.events import ProgressEvent, broker
 from app.services.extraction import extract_document
 
 logger = logging.getLogger(__name__)
+
+
+async def run_checks_in_background(document_id: int) -> None:
+    """Entry point for the background task queued after an upload.
+
+    Opens its own session, because the request's is long gone by the time this
+    runs. It loads the document by primary key deliberately: this runs as the
+    system rather than as a person, so there is no user to scope it to — which
+    is exactly why it lives here and not among the routes, where loading a
+    document unscoped would be a department-boundary bug.
+    """
+    with AppSessionLocal() as session:
+        document = session.get(Document, document_id)
+        if document is None:
+            return
+        try:
+            await run_checks_for_document(session, document)
+        except Exception:
+            logger.exception("background checks failed for document %s", document_id)
 
 
 async def run_checks_for_document(session: Session, document: Document) -> None:

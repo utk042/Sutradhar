@@ -28,21 +28,39 @@ from datetime import date  # noqa: E402
 from sqlalchemy import select  # noqa: E402
 
 from app.db.app import app_session_scope  # noqa: E402
+from app.models.department import Department  # noqa: E402
 from app.models.reference import RegistryRecord, Rule  # noqa: E402
 from app.models.user import User  # noqa: E402
 from app.services.security import hash_password  # noqa: E402
+
+#: Two departments, deliberately. One office cannot demonstrate that a head of
+#: department sees their own office and no other — the second exists so that
+#: boundary is visible on screen and testable.
+SEED_DEPARTMENTS = (
+    {"code": "REG", "name": "Registration Office"},
+    {"code": "WEL", "name": "Welfare Office"},
+)
 
 SEED_USERS = (
     {
         "mobile_number": "9000000001",
         "full_name": "Demo Officer",
         "role": "officer",
+        "department": "REG",
         "password_env": "SUTRADHAR_SEED_OFFICER_PASSWORD",
     },
     {
         "mobile_number": "9000000002",
         "full_name": "Demo Section Head",
         "role": "dept_head",
+        "department": "REG",
+        "password_env": "SUTRADHAR_SEED_DEPT_HEAD_PASSWORD",
+    },
+    {
+        "mobile_number": "9000000003",
+        "full_name": "Second Office Head",
+        "role": "dept_head",
+        "department": "WEL",
         "password_env": "SUTRADHAR_SEED_DEPT_HEAD_PASSWORD",
     },
 )
@@ -119,6 +137,20 @@ SEED_RULES = (
         "description_en": "A birth certificate must name the authority that issued it.",
     },
 )
+
+
+def seed_departments(session) -> dict[str, int]:
+    """Create the offices and return their ids by code."""
+    ids: dict[str, int] = {}
+    for spec in SEED_DEPARTMENTS:
+        found = session.scalar(select(Department).where(Department.code == spec["code"]))
+        if found is None:
+            found = Department(**spec)
+            session.add(found)
+            session.flush()
+            print(f"  created  department {spec['code']} — {spec['name']}")
+        ids[spec["code"]] = found.id
+    return ids
 
 
 def seed_reference(session) -> tuple[int, int]:
@@ -212,25 +244,28 @@ def main() -> int:
 
     created, existing = 0, 0
     with app_session_scope() as session:
+        department_ids = seed_departments(session)
+
         for spec in SEED_USERS:
             found = session.scalar(
                 select(User).where(User.mobile_number == spec["mobile_number"])
             )
             if found is not None:
                 existing += 1
-                print(f"  exists   {spec['role']:<10} {spec['mobile_number']}")
+                print(f"  exists   {spec['role']:<10} {spec['mobile_number']}  ({spec['department']})")
                 continue
             session.add(
                 User(
                     mobile_number=spec["mobile_number"],
                     full_name=spec["full_name"],
                     role=spec["role"],
+                    department_id=department_ids[spec["department"]],
                     password_hash=hash_password(os.environ[spec["password_env"]]),
                     is_active=True,
                 )
             )
             created += 1
-            print(f"  created  {spec['role']:<10} {spec['mobile_number']}")
+            print(f"  created  {spec['role']:<10} {spec['mobile_number']}  ({spec['department']})")
 
         records, rules = seed_reference(session)
         print(f"  records  {records} added")

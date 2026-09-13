@@ -12,6 +12,7 @@ import tempfile
 from pathlib import Path
 
 import pytest
+from sqlalchemy import select
 
 _TMP = Path(tempfile.mkdtemp(prefix="sutradhar-tests-"))
 os.environ.setdefault("SUTRADHAR_JWT_SECRET", "test-secret-" + "x" * 40)
@@ -26,6 +27,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "scripts"))
 from app.config import get_settings  # noqa: E402
 from app.db.app import AppSessionLocal, app_engine  # noqa: E402
 from app.db.base import Base  # noqa: E402
+from app.models.department import Department  # noqa: E402
 from app.models.document import Document  # noqa: E402
 from app.models.reference import RegistryRecord, Rule  # noqa: E402
 from app.models.user import User  # noqa: E402
@@ -33,6 +35,10 @@ from app.services.security import hash_password  # noqa: E402
 
 OFFICER_MOBILE = "9000000001"
 DEPT_HEAD_MOBILE = "9000000002"
+#: A second office, so cross-department isolation is testable rather than
+#: assumed. One department cannot demonstrate a boundary.
+OTHER_OFFICER_MOBILE = "9000000011"
+OTHER_HEAD_MOBILE = "9000000012"
 PASSWORD = "test-password-value"
 
 
@@ -59,12 +65,18 @@ def clean_tables(database):
             session.execute(table.delete())
         session.commit()
 
+        registration = Department(code="REG", name="Registration Office")
+        welfare = Department(code="WEL", name="Welfare Office")
+        session.add_all([registration, welfare])
+        session.flush()
+
         session.add_all(
             [
                 User(
                     mobile_number=OFFICER_MOBILE,
                     full_name="Test Officer",
                     role="officer",
+                    department_id=registration.id,
                     password_hash=hash_password(PASSWORD),
                     is_active=True,
                 ),
@@ -72,6 +84,23 @@ def clean_tables(database):
                     mobile_number=DEPT_HEAD_MOBILE,
                     full_name="Test Section Head",
                     role="dept_head",
+                    department_id=registration.id,
+                    password_hash=hash_password(PASSWORD),
+                    is_active=True,
+                ),
+                User(
+                    mobile_number=OTHER_OFFICER_MOBILE,
+                    full_name="Welfare Officer",
+                    role="officer",
+                    department_id=welfare.id,
+                    password_hash=hash_password(PASSWORD),
+                    is_active=True,
+                ),
+                User(
+                    mobile_number=OTHER_HEAD_MOBILE,
+                    full_name="Welfare Head",
+                    role="dept_head",
+                    department_id=welfare.id,
                     password_hash=hash_password(PASSWORD),
                     is_active=True,
                 ),
@@ -91,6 +120,20 @@ def client():
         yield test_client
 
 
+def _sign_in(mobile: str):
+    """A fresh client signed in as one person."""
+    from fastapi.testclient import TestClient
+
+    from app.main import app
+
+    test_client = TestClient(app)
+    response = test_client.post(
+        "/api/auth/login", json={"mobile_number": mobile, "password": PASSWORD}
+    )
+    assert response.status_code == 200, response.text
+    return test_client
+
+
 @pytest.fixture
 def anonymous():
     """A client that has never signed in.
@@ -108,24 +151,64 @@ def anonymous():
 
 
 @pytest.fixture
-def officer(client):
-    """A signed-in officer: the returned client carries the session cookie."""
-    response = client.post(
-        "/api/auth/login",
-        json={"mobile_number": OFFICER_MOBILE, "password": PASSWORD},
-    )
-    assert response.status_code == 200, response.text
-    return client
+def officer():
+    """A signed-in officer.
+
+    Its own client, not the shared one. Two fixtures signing in on a single
+    client means the second overwrites the first's cookie, and a test using both
+    an officer and their head would silently run as whichever came last.
+    """
+    with _sign_in(OFFICER_MOBILE) as c:
+        yield c
 
 
 @pytest.fixture
-def dept_head(client):
-    response = client.post(
-        "/api/auth/login",
-        json={"mobile_number": DEPT_HEAD_MOBILE, "password": PASSWORD},
-    )
-    assert response.status_code == 200, response.text
-    return client
+def dept_head():
+    """A signed-in head of the same department."""
+    with _sign_in(DEPT_HEAD_MOBILE) as c:
+        yield c
+
+
+@pytest.fixture
+def other_officer():
+    """An officer in the other department."""
+    with _sign_in(OTHER_OFFICER_MOBILE) as c:
+        yield c
+
+
+@pytest.fixture
+def other_head():
+    """A head of department over the other department."""
+    with _sign_in(OTHER_HEAD_MOBILE) as c:
+        yield c
+
+
+@pytest.fixture
+def second_officer_same_department():
+    """A second officer in the same department as `officer`.
+
+    Created here rather than seeded, so tests about one officer not seeing
+    another's desk have somebody to not see.
+    """
+    from app.models.department import Department as Dept
+
+    with AppSessionLocal() as session:
+        registration = session.scalars(
+            select(Dept).where(Dept.code == "REG")
+        ).first()
+        session.add(
+            User(
+                mobile_number="9000000004",
+                full_name="Second Registration Officer",
+                role="officer",
+                department_id=registration.id,
+                password_hash=hash_password(PASSWORD),
+                is_active=True,
+            )
+        )
+        session.commit()
+    with _sign_in("9000000004") as c:
+        yield c
 
 
 @pytest.fixture

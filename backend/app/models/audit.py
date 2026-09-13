@@ -25,6 +25,11 @@ AUDIT_ACTIONS = (
     "checks_completed",
     "document_approved",
     "document_rejected",
+    "decision_superseded",
+    "officer_created",
+    "officer_activated",
+    "officer_deactivated",
+    "document_reassigned",
     "provider_changed",
 )
 

@@ -27,7 +27,8 @@ def _record_a_few(session):
     from app.models.document import Document
     from app.models.user import User
 
-    officer_id = session.scalars(select(User).where(User.role == "officer")).first().id
+    officer = session.scalars(select(User).where(User.role == "officer")).first()
+    officer_id = officer.id
 
     document_ids = []
     for index in range(1, 4):
@@ -41,6 +42,8 @@ def _record_a_few(session):
             sha256="0" * 64,
             status="pending_review",
             uploaded_by=officer_id,
+            department_id=officer.department_id,
+            assigned_to=officer_id,
         )
         session.add(document)
         session.flush()

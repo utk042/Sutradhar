@@ -56,6 +56,13 @@ class Document(Base):
     extracted_text: Mapped[str | None] = mapped_column(Text, default=None)
 
     uploaded_by: Mapped[int] = mapped_column(ForeignKey("users.id"))
+    #: Taken from the uploader at creation. Kept on the row rather than joined
+    #: through the uploader, so a document cannot change department when a person
+    #: moves office, and so every scoped query is a single predicate.
+    department_id: Mapped[int] = mapped_column(ForeignKey("departments.id"), index=True)
+    #: The officer responsible for deciding it. Starts as the uploader and can be
+    #: reassigned by a head of department.
+    assigned_to: Mapped[int] = mapped_column(ForeignKey("users.id"), index=True)
     uploaded_at: Mapped[datetime] = mapped_column(UTCDateTime, default=utcnow)
 
     reviewed_by: Mapped[int | None] = mapped_column(ForeignKey("users.id"), default=None)

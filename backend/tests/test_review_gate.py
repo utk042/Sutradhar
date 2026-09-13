@@ -18,51 +18,93 @@ from app.models.finding import Finding as FindingRow
 
 APP_ROOT = Path(__file__).resolve().parents[1] / "app"
 DECISIONS = {"approved", "rejected"}
+
+#: The one function that writes a decision onto a document.
+THE_WRITER = "services/decisions.py"
+#: The one module allowed to call it.
 THE_ONLY_GATE = "api/review.py"
 
 
+#: Statuses that are not decisions. A document passes through these on its way
+#: to a person, and moving it to one of them is ordinary bookkeeping.
+NOT_DECISIONS = {"uploaded", "processing", "pending_review", "failed"}
+
+
 def _decision_writes(path: Path) -> list[int]:
-    """Line numbers where this module assigns a decision to a document's status."""
+    """Line numbers where this module could be assigning a decision to a status.
+
+    Deliberately strict: an assignment to `.status` counts unless the value is a
+    string literal that is plainly not a decision. So `= "approved"` counts,
+    `= payload.decision` counts, and so does `= decision` or any other dynamic
+    value — because a name can hold anything, and a test that only recognised
+    the literal spelling would be evaded by the first refactor that introduced a
+    variable. Which is exactly what happened when the write moved into
+    services/decisions.py.
+    """
     tree = ast.parse(path.read_text(encoding="utf-8"), str(path))
     lines: list[int] = []
 
     for node in ast.walk(tree):
         if not isinstance(node, ast.Assign):
             continue
-        # `document.status = "approved"` — a literal decision value.
-        literal = (
+        if not any(
+            isinstance(target, ast.Attribute) and target.attr == "status"
+            for target in node.targets
+        ):
+            continue
+        # Plainly not a decision: a literal from the bookkeeping set.
+        if (
             isinstance(node.value, ast.Constant)
             and isinstance(node.value.value, str)
-            and node.value.value in DECISIONS
-        )
-        # `document.status = payload.decision` — a value from the request.
-        from_payload = isinstance(node.value, ast.Attribute) and node.value.attr == "decision"
-        if not (literal or from_payload):
+            and node.value.value in NOT_DECISIONS
+        ):
             continue
-        for target in node.targets:
-            if isinstance(target, ast.Attribute) and target.attr == "status":
-                lines.append(node.lineno)
+        lines.append(node.lineno)
     return lines
 
 
-def test_only_the_review_route_writes_a_decision():
-    """Nothing anywhere else in the application moves a document to a decision."""
+def test_one_function_writes_a_decision():
+    """`document.status = <a decision>` appears in exactly one module."""
     offenders: dict[str, list[int]] = {}
     for path in sorted(APP_ROOT.rglob("*.py")):
         relative = path.relative_to(APP_ROOT).as_posix()
         writes = _decision_writes(path)
-        if writes and relative != THE_ONLY_GATE:
+        if writes and relative != THE_WRITER:
             offenders[relative] = writes
 
     assert not offenders, (
-        "a decision is written outside the review gate: "
+        "a decision is written outside " + THE_WRITER + ": "
         + ", ".join(f"{where} line(s) {lines}" for where, lines in offenders.items())
     )
 
-    # And the gate itself must actually contain one, or the test above passes
-    # simply because nothing writes a decision at all.
-    gate_writes = _decision_writes(APP_ROOT / THE_ONLY_GATE)
-    assert gate_writes, f"expected {THE_ONLY_GATE} to write a decision"
+    # And that module must actually contain one, or this passes simply because
+    # nothing writes a decision at all.
+    assert _decision_writes(APP_ROOT / THE_WRITER), f"expected {THE_WRITER} to write a decision"
+
+
+def test_only_the_review_gate_calls_it():
+    """`record_decision` is called from one module: the gate.
+
+    Together with the test above this is the whole claim — one function writes a
+    decision, and one module is allowed to ask it to.
+    """
+    callers: list[str] = []
+    for path in sorted(APP_ROOT.rglob("*.py")):
+        relative = path.relative_to(APP_ROOT).as_posix()
+        if relative == THE_WRITER:
+            continue
+        tree = ast.parse(path.read_text(encoding="utf-8"), str(path))
+        for node in ast.walk(tree):
+            if (
+                isinstance(node, ast.Call)
+                and isinstance(node.func, ast.Name)
+                and node.func.id == "record_decision"
+            ):
+                callers.append(f"{relative}:{node.lineno}")
+
+    outside = [c for c in callers if not c.startswith(THE_ONLY_GATE)]
+    assert not outside, "a decision is recorded outside the gate: " + ", ".join(outside)
+    assert callers, f"expected {THE_ONLY_GATE} to record a decision"
 
 
 def test_deciding_requires_a_session(anonymous, reviewed_document):

@@ -69,6 +69,15 @@ class Finding(Base):
 
     explanation_en: Mapped[str] = mapped_column(Text)
     explanation_hi: Mapped[str | None] = mapped_column(Text, default=None)
+
+    #: Where this value sits on the document, as fractions of the page, so the
+    #: mark can be placed at any zoom. Null when the value could not be located
+    #: — a scan with no text layer, or a finding about the document as a whole.
+    page_number: Mapped[int | None] = mapped_column(Integer, default=None)
+    box_left: Mapped[float | None] = mapped_column(default=None)
+    box_top: Mapped[float | None] = mapped_column(default=None)
+    box_width: Mapped[float | None] = mapped_column(default=None)
+    box_height: Mapped[float | None] = mapped_column(default=None)
     confidence: Mapped[float] = mapped_column(default=0.0)
     created_at: Mapped[datetime] = mapped_column(UTCDateTime, default=utcnow)
 

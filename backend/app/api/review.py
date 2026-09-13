@@ -1,19 +1,26 @@
 """The review gate.
 
-This is the only code path in the system that moves a document to `approved` or
-`rejected`. No agent, no background task, no other route writes
-`Document.status` to a decision value — `run_checks_for_document` moves it as far
-as `pending_review` and stops there, which is the gate.
+This is the only module in the system that writes a decision onto a document.
+Two routes do it:
 
-Every decision here:
-  - requires a valid session cookie (the dependency verifies the JWT),
-  - re-reads the officer's role from the database rather than trusting the token,
-  - refuses anything not currently in `pending_review`, so a document cannot be
-    decided twice or decided before the checks have run,
-  - requires a reason to reject, and an override note to approve over a blocking
-    finding,
-  - writes the decision, the officer's ID and the timestamp in one transaction,
-    together with the audit row.
+- An officer decides a document their office has finished checking.
+- A head of department supersedes a decision already made in their office.
+
+A supersede is not an edit. The original decision stays, attributed to whoever
+made it, and both appear in the history and the audit log. What changes is which
+decision is in force.
+
+Every path here:
+  - requires a valid session cookie,
+  - re-reads the role from the database rather than trusting the token,
+  - is scoped to the caller's own department, so a head of one office cannot
+    reach into another's,
+  - requires a reason to reject and to supersede anything, and an override note
+    to approve over a blocking finding,
+  - writes the decision and its audit row in one transaction.
+
+`tests/test_review_gate.py` asserts by reading the syntax tree that no other
+module in the application assigns a decision to a document's status.
 """
 
 import logging
@@ -23,17 +30,25 @@ from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
-from app.api.deps import CurrentUserDep, require_officer
+from app.api.deps import require_dept_head, require_officer
+from app.api.scope import load_visible_document
 from app.db.app import get_app_session
-from app.models.document import Document
 from app.models.finding import Finding as FindingRow
-from app.models.types import utcnow
 from app.models.user import User
-from app.schemas.document import DocumentDetail, ReviewDecision
+from app.schemas.document import DocumentDetail, ReviewDecision, SupersedeDecision
 from app.services import audit
+from app.services.decisions import current_decision, record_decision
 
 router = APIRouter(prefix="/documents", tags=["review"])
 logger = logging.getLogger(__name__)
+
+
+def _has_blocking(session: Session, document_id: int) -> bool:
+    return session.scalar(
+        select(FindingRow.id)
+        .where(FindingRow.document_id == document_id, FindingRow.severity == "blocking")
+        .limit(1)
+    ) is not None
 
 
 @router.post("/{document_id}/decision", response_model=DocumentDetail)
@@ -45,9 +60,7 @@ def decide(
 ) -> DocumentDetail:
     from app.api.documents import _load_detail
 
-    document = session.get(Document, document_id)
-    if document is None:
-        raise HTTPException(status.HTTP_404_NOT_FOUND, detail="document_not_found")
+    document = load_visible_document(session, user, document_id)
 
     # The gate: only a document whose checks have finished, and which nobody has
     # already decided, can be decided now.
@@ -57,23 +70,22 @@ def decide(
     if payload.decision == "rejected" and not (payload.reason or "").strip():
         raise HTTPException(status.HTTP_400_BAD_REQUEST, detail="reason_required")
 
-    has_blocking = session.scalar(
-        select(FindingRow.id)
-        .where(FindingRow.document_id == document_id, FindingRow.severity == "blocking")
-        .limit(1)
-    )
+    blocking = _has_blocking(session, document_id)
     if (
         payload.decision == "approved"
-        and has_blocking
+        and blocking
         and not (payload.override_note or "").strip()
     ):
         raise HTTPException(status.HTTP_400_BAD_REQUEST, detail="override_note_required")
 
-    document.status = payload.decision
-    document.reviewed_by = user.id
-    document.reviewed_at = utcnow()
-    document.decision_reason = (payload.reason or "").strip() or None
-    document.override_note = (payload.override_note or "").strip() or None
+    record_decision(
+        session,
+        document=document,
+        actor=user,
+        decision=payload.decision,
+        reason=payload.reason,
+        override_note=payload.override_note,
+    )
 
     audit.record(
         session,
@@ -83,15 +95,71 @@ def decide(
         document_id=document.id,
         detail={
             "decision": payload.decision,
-            "over_blocking": bool(has_blocking),
-            "reason_given": bool(document.decision_reason),
+            "over_blocking": blocking,
+            "reason_given": bool((payload.reason or "").strip()),
         },
     )
     # One transaction: the decision and its audit row commit together, or
     # neither does.
     session.commit()
+    return _load_detail(session, user, document_id)
 
-    logger.info(
-        "document %s %s by user %s", document.id, payload.decision, user.id
+
+@router.post("/{document_id}/supersede", response_model=DocumentDetail)
+def supersede(
+    document_id: int,
+    payload: SupersedeDecision,
+    user: Annotated[User, Depends(require_dept_head)],
+    session: Annotated[Session, Depends(get_app_session)],
+) -> DocumentDetail:
+    """A head of department replaces a decision made in their office.
+
+    The earlier decision is not rewritten — it is marked as superseded by this
+    one, and stays visible and attributed. A reason is always required: this
+    overrules a colleague, and the record should say why.
+    """
+    from app.api.documents import _load_detail
+
+    document = load_visible_document(session, user, document_id)
+
+    existing = current_decision(session, document_id)
+    if existing is None or document.status not in {"approved", "rejected"}:
+        raise HTTPException(status.HTTP_409_CONFLICT, detail="document_not_decided")
+
+    if not (payload.reason or "").strip():
+        raise HTTPException(status.HTTP_400_BAD_REQUEST, detail="reason_required")
+
+    if payload.decision == existing.decision:
+        raise HTTPException(status.HTTP_409_CONFLICT, detail="decision_unchanged")
+
+    if (
+        payload.decision == "approved"
+        and _has_blocking(session, document_id)
+        and not (payload.override_note or "").strip()
+    ):
+        raise HTTPException(status.HTTP_400_BAD_REQUEST, detail="override_note_required")
+
+    record_decision(
+        session,
+        document=document,
+        actor=user,
+        decision=payload.decision,
+        reason=payload.reason,
+        override_note=payload.override_note,
+        supersedes=existing,
     )
-    return _load_detail(session, document_id)
+
+    audit.record(
+        session,
+        action="decision_superseded",
+        actor_user_id=user.id,
+        actor_role=user.role,
+        document_id=document.id,
+        detail={
+            "decision": payload.decision,
+            "replaced_decision_id": existing.id,
+            "originally_decided_by": existing.decided_by,
+        },
+    )
+    session.commit()
+    return _load_detail(session, user, document_id)
