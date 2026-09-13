@@ -8,8 +8,7 @@
   "language": {
     "label": "Language",
     "en": "English",
-    "hi": "हिन्दी",
-    "switchLabel": "Change language"
+    "hi": "हिन्दी"
   },
   "login": {
     "title": "Sign in",
@@ -26,16 +25,14 @@
       "invalid_credentials": "That mobile number and password do not match. Check both and try again.",
       "network": "Could not reach the system. Check your connection and try again.",
       "unexpected": "Something went wrong at our end. Please try again in a moment."
-    }
+    },
+    "visualCaption": "Three checks run against the records at the same time. Everything they find is gathered and handed to you. Nothing is decided until you decide it.",
+    "visualTitle": "Checked by the system. Decided by you."
   },
   "home": {
     "title": "Your desk",
     "signedInAs": "Signed in as {name}",
     "signOut": "Sign out",
-    "upload": "Upload document",
-    "uploading": "Uploading…",
-    "chooseFile": "Choose a document to upload",
-    "fileHint": "PDF, PNG or JPEG, up to 10 MB",
     "pendingTitle": "Documents waiting for you",
     "emptyTitle": "Nothing waiting",
     "emptyBody": "When you upload a document it will appear here once the checks have run.",
@@ -126,7 +123,8 @@
     "zoomIn": "Larger",
     "zoomOut": "Smaller",
     "zoomFit": "Whole page",
-    "zoomLevel": "{percent}%"
+    "zoomLevel": "{percent}%",
+    "crumb": "File {reference}"
   },
   "finding": {
     "verified": "Verified",
@@ -158,7 +156,8 @@
     "reasonGiven": "Reason given",
     "noteGiven": "Your note",
     "auditTitle": "This decision has been recorded in the audit log.",
-    "backToDesk": "Back to your desk"
+    "backToDesk": "Back to your desk",
+    "crumb": "Decision"
   },
   "upload": {
     "errors": {
@@ -169,7 +168,17 @@
       "upload_unreadable": "That file could not be read. Choose another one.",
       "network": "Could not reach the system. Check your connection and try again.",
       "unexpected": "Something went wrong at our end. Please try again in a moment."
-    }
+    },
+    "heading": "Choose a document to upload",
+    "hint": "PDF, PNG or JPEG, up to 10 MB",
+    "or": "or",
+    "choose": "Choose a file",
+    "chooseAnother": "Choose another file",
+    "uploading": "Uploading…",
+    "uploadingHint": "Please wait. Do not close this page.",
+    "received": "Received",
+    "notSent": "This file was not sent",
+    "fileSize": "{size} MB"
   },
   "checks": {
     "verification": "Matching against records",
@@ -250,7 +259,11 @@
   },
   "nav": {
     "desk": "Your desk",
-    "dashboard": "Your office"
+    "dashboard": "Your office",
+    "menu": "Menu",
+    "closeMenu": "Close",
+    "breadcrumb": "Where you are",
+    "primary": "Service navigation"
   },
   "settings": {
     "title": "Settings",
@@ -265,5 +278,8 @@
     },
     "languageHint": "Your choice stays in the address, so a page you bookmark or send to a colleague opens in the same language.",
     "open": "Settings"
+  },
+  "table": {
+    "scrollHint": "Slide this table sideways to see the rest of it."
   }
 }

@@ -4,6 +4,7 @@ import {useCallback, useEffect, useId, useState} from 'react';
 import {useFormatter, useTranslations} from 'next-intl';
 import {useRouter} from '@/i18n/routing';
 import AnnotatedDocument from '@/components/AnnotatedDocument';
+import Breadcrumb from '@/components/Breadcrumb';
 import AnnotatedPage from '@/components/AnnotatedPage';
 import CheckProgressPanel from '@/components/CheckProgressPanel';
 import FindingCard from '@/components/FindingCard';
@@ -15,6 +16,7 @@ import {
   type ProgressState
 } from '@/lib/progress';
 import StatusTag from '@/components/StatusTag';
+import TableScroll from '@/components/TableScroll';
 import {
   decide,
   documentFileUrl,
@@ -45,6 +47,7 @@ import {
 export default function ReviewClient({documentId}: {documentId: number}) {
   const t = useTranslations('review');
   const tf = useTranslations('finding');
+  const tn = useTranslations('nav');
   const format = useFormatter();
   const router = useRouter();
 
@@ -149,6 +152,13 @@ export default function ReviewClient({documentId}: {documentId: number}) {
 
   return (
     <section className="sutradhar-page ux4g-p-l">
+      <Breadcrumb
+        label={tn('breadcrumb')}
+        items={[
+          {label: tn('desk'), href: '/'},
+          {label: t('crumb', {reference: doc.public_ref})}
+        ]}
+      />
       <div className="ux4g-d-flex ux4g-ai-center ux4g-gap-s ux4g-mb-l sutradhar-wrap">
         <h1 className="ux4g-heading-l-strong">{t('title', {reference: doc.public_ref})}</h1>
         <StatusTag status={doc.status} />
@@ -220,7 +230,7 @@ export default function ReviewClient({documentId}: {documentId: number}) {
           {Object.keys(doc.extracted).length > 0 && (
             <>
               <h3 className="ux4g-heading-xs-strong ux4g-mb-xs">{t('extractedTitle')}</h3>
-              <div className="sutradhar-table-scroll">
+              <TableScroll label={t('extractedTitle')}>
                 <table className="ux4g-table ux4g-table-s ux4g-w-100">
                   <tbody>
                     {Object.entries(doc.extracted).map(([field, value]) => (
@@ -233,7 +243,7 @@ export default function ReviewClient({documentId}: {documentId: number}) {
                     ))}
                   </tbody>
                 </table>
-              </div>
+              </TableScroll>
             </>
           )}
         </section>
@@ -270,7 +280,7 @@ export default function ReviewClient({documentId}: {documentId: number}) {
           {doc.checks.length > 0 && (
             <details className="ux4g-mt-m">
               <summary className="ux4g-body-s-default">{t('technicalDetails')}</summary>
-              <div className="sutradhar-table-scroll ux4g-mt-xs">
+              <TableScroll label={t('technicalDetails')}>
                 <table className="ux4g-table ux4g-table-s ux4g-w-100">
                   <thead>
                     <tr>
@@ -291,7 +301,7 @@ export default function ReviewClient({documentId}: {documentId: number}) {
                     ))}
                   </tbody>
                 </table>
-              </div>
+              </TableScroll>
             </details>
           )}
         </section>
@@ -334,7 +344,7 @@ export default function ReviewClient({documentId}: {documentId: number}) {
               </div>
             )}
 
-            <div className="ux4g-d-flex ux4g-ai-center ux4g-gap-m sutradhar-wrap">
+            <div className="ux4g-d-flex ux4g-ai-center ux4g-gap-m sutradhar-wrap sutradhar-stack-narrow">
               <button
                 type="button"
                 className="ux4g-btn ux4g-btn-primary ux4g-btn-lg"

@@ -172,10 +172,20 @@
 }
 
 /* Tables are the one thing allowed to scroll sideways, in their own container,
-   so the page itself never does. */
+   so the page itself never does.
+
+   The container is a tab stop (see components/TableScroll.tsx), because WCAG
+   2.1.1 requires a keyboard to be able to scroll scrollable content — so it
+   also needs a focus ring of its own. UX4G has no focus treatment for a plain
+   scroll region; the outline token is the one every other control uses. */
 .sutradhar-table-scroll {
   overflow-x: auto;
   max-width: 100%;
+}
+
+.sutradhar-table-scroll:focus-visible {
+  outline: var(--ux4g-border-width-md) solid var(--ux4g-text-brand-primary-default);
+  outline-offset: 2px;
 }
 
 /* The findings list carries its own cards; the default list bullets and indent
@@ -186,26 +196,16 @@
   padding: 0;
 }
 
-/* GAP: UX4G ships an Upload component (ux4g-upload) built around drag-and-drop
-   with its own button and file-list markup. This screen needs a single native
-   file input so that the control an officer tabs to is the one that opens the
-   file browser, with no second interactive element beside it. Only spacing and
-   the focus target are set; colour and radius come from tokens. */
-.sutradhar-file-input {
-  display: block;
-  width: 100%;
-  max-width: 32rem;
-  padding: var(--ux4g-padding-s);
-  border: var(--ux4g-border-width-sm) solid var(--ux4g-border-color-neutral-strong);
-  border-radius: var(--ux4g-radius-md);
-  background-color: var(--ux4g-bg-neutral-elevated);
-  color: var(--ux4g-text-neutral-primary);
-  font: inherit;
-}
+/* The drag-and-drop panel, while a file is being dragged over it.
 
-.sutradhar-file-input:focus-visible {
-  outline: var(--ux4g-border-width-md) solid var(--ux4g-focus-outline, var(--ux4g-text-brand-primary-default));
-  outline-offset: 2px;
+   GAP: UX4G's File Upload ships states for default, selecting, scanning,
+   uploaded and error, but none for "a file is hovering over the drop zone".
+   Without it the panel gives no sign that letting go will do anything. Both
+   values are UX4G tokens, and drag-and-drop is never the only way to choose a
+   file — the button beside it is what a keyboard uses. */
+.sutradhar-upload-dragging {
+  border-color: var(--ux4g-border-color-primary-strong);
+  background-color: var(--ux4g-bg-primary);
 }
 
 /* Make the spinner visible.
@@ -396,4 +396,286 @@
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(13rem, 1fr));
   gap: var(--ux4g-gap-column-m, var(--ux4g-padding-m));
+}
+
+/* ---------------------------------------------------------------------------
+   The sign-in screen: the form beside a picture of what the service does.
+
+   GAP: UX4G has no split/hero layout primitive. `ux4g-row` + `ux4g-col-*` is a
+   12-column grid meant for content within a page, and using it here would still
+   need a custom rule to make the two halves equal height and to reorder them
+   between breakpoints. Layout only — every colour, radius and gap below is a
+   UX4G token.
+
+   The form is first in the document and second in the grid: reading order
+   reaches the sign-in field immediately, while a wide screen still shows the
+   picture on the left where the eye starts.
+   --------------------------------------------------------------------------- */
+.sutradhar-auth {
+  width: 100%;
+  max-width: 1140px;
+  margin-inline: auto;
+}
+
+.sutradhar-auth-split {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: var(--ux4g-section-xs);
+  align-items: center;
+}
+
+/* Two columns only once there is room for a readable form beside the picture.
+   1024px is the foot of Design.md §8's Tablet mode; below it the grid is one
+   column and the picture follows the form rather than pushing it off screen. */
+@media (min-width: 1024px) {
+  .sutradhar-auth-split {
+    grid-template-columns: 1fr 1fr;
+    gap: var(--ux4g-section-s);
+  }
+
+  .sutradhar-auth-visual {
+    grid-column: 1;
+    grid-row: 1;
+  }
+
+  .sutradhar-auth-form {
+    grid-column: 2;
+    grid-row: 1;
+  }
+}
+
+/* The form keeps a readable measure even in half a wide screen. */
+.sutradhar-auth-form {
+  width: 100%;
+  max-width: 32rem;
+  margin-inline: auto;
+}
+
+.sutradhar-auth-visual {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--ux4g-gap-row-m);
+  padding: var(--ux4g-padding-xl);
+  border-radius: var(--ux4g-radius-lg);
+  background-color: var(--ux4g-bg-primary);
+  text-align: center;
+}
+
+/* Measured against --ux4g-bg-primary (#f2efff light, #24145c dark):
+   primary text 15.85:1 light / 15.13:1 dark, secondary 9.17:1 / 12.54:1.
+   Both are well past the 4.5:1 that WCAG 1.4.3 asks of body text. */
+.sutradhar-auth-promise {
+  margin: 0;
+  color: var(--ux4g-text-neutral-primary);
+}
+
+.sutradhar-auth-caption {
+  margin: 0;
+  max-width: 28rem;
+  color: var(--ux4g-text-neutral-secondary);
+}
+
+/* The drawing itself.
+
+   GAP: UX4G ships no illustration set, so this is our own artwork. It carries
+   no colour of its own — `currentColor` takes the brand token below, which
+   measures 7.69:1 on the panel in light and 6.06:1 in dark, so the lines stay
+   visible in both without a second asset. It is `aria-hidden` and says nothing
+   that is not also written beside it. */
+.sutradhar-auth-art {
+  width: 100%;
+  max-width: 22rem;
+  height: auto;
+  color: var(--ux4g-text-brand-primary-default);
+}
+
+.sutradhar-auth-art-paper rect {
+  fill: var(--ux4g-bg-neutral-elevated);
+  stroke: currentColor;
+  stroke-width: 2;
+}
+
+.sutradhar-auth-art-rule rect {
+  fill: var(--ux4g-border-color-neutral-strong);
+  stroke: none;
+}
+
+.sutradhar-auth-art-line path {
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 2;
+  stroke-linecap: round;
+  opacity: 0.55;
+}
+
+.sutradhar-auth-art-check rect {
+  fill: var(--ux4g-bg-neutral-elevated);
+  stroke: currentColor;
+  stroke-width: 2;
+}
+
+.sutradhar-auth-art-tick {
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 2.5;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.sutradhar-auth-art-person circle {
+  fill: currentColor;
+  stroke: none;
+}
+
+.sutradhar-auth-art-person-head {
+  fill: var(--ux4g-bg-neutral-elevated) !important;
+  stroke: none;
+}
+
+/* ---------------------------------------------------------------------------
+   The navigation menu on a narrow screen.
+
+   UX4G's Drawer supplies the panel, the overlay, the slide and the body scroll
+   lock. Only three things are added:
+   --------------------------------------------------------------------------- */
+
+/* 1. The drawer belongs to the mobile navbar slot, which UX4G hides above
+      768px. The drawer itself is a fixed-position element outside that slot, so
+      without this it would survive a resize and sit open over a desktop page.
+      Matches the breakpoint in the shipped `.ux4g-navbar-desktop` rule exactly. */
+@media (min-width: 769px) {
+  .sutradhar-menu-drawer,
+  .sutradhar-menu-overlay {
+    display: none;
+  }
+}
+
+/* 2. The links stack full width, each its own row, so every one of them clears
+      the 44px target on a phone. UX4G's navbar link list is a horizontal row
+      and has no stacked form. */
+.sutradhar-menu-list {
+  display: flex;
+  flex-direction: column;
+  gap: var(--ux4g-gap-row-xs);
+}
+
+.sutradhar-menu-list .ux4g-btn {
+  justify-content: flex-start;
+}
+
+/* 3. The drawer is never wider than the screen it is on. */
+.sutradhar-menu-drawer {
+  max-width: min(20rem, 85vw);
+}
+
+/* ---------------------------------------------------------------------------
+   Responsive corrections.
+   --------------------------------------------------------------------------- */
+
+/* Nothing in this service may scroll sideways. Tables, document pages and code
+   scroll inside their own containers; the page itself does not. */
+html,
+body {
+  overflow-x: hidden;
+}
+
+/* A long filename or a document number with no spaces in it would otherwise
+   push a table cell — and with it the whole row — past the screen. */
+.sutradhar-break-word {
+  overflow-wrap: anywhere;
+  word-break: break-word;
+}
+
+/* Headings set at desktop sizes are too large for a 360px screen: a single
+   long word can outrun the viewport. The type scale stays UX4G's — this only
+   steps `Heading/L` down to `Heading/M` and `Heading/S` to `Heading/XS`, both
+   of which are UX4G styles, at the top of Design.md §8's Mobile mode. */
+@media (max-width: 480px) {
+  .sutradhar-shell h1.ux4g-heading-l-strong {
+    font-size: var(--ux4g-fs-24);
+    line-height: var(--ux4g-lh-28);
+  }
+
+  .sutradhar-shell h2.ux4g-heading-s-strong {
+    font-size: var(--ux4g-fs-16);
+    line-height: var(--ux4g-lh-20);
+  }
+}
+
+/* Decision and form buttons go full width rather than shrinking below a
+   comfortable target, and stop sitting two-to-a-row on a narrow screen. UX4G's
+   own File Upload does the same thing at 767px; this applies it to the rows we
+   build ourselves. */
+@media (max-width: 600px) {
+  .sutradhar-stack-narrow {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .sutradhar-stack-narrow > .ux4g-btn {
+    width: 100%;
+  }
+}
+
+/* The breadcrumb's own list rule sets `flex-wrap` and `gap` but never
+   `display`, so the gap does nothing on its own; the UX4G flex utilities on the
+   list supply it. This only keeps the trail from pushing the page sideways when
+   a document reference is long. */
+.sutradhar-breadcrumb {
+  max-width: 100%;
+  overflow-wrap: anywhere;
+}
+
+/* ---------------------------------------------------------------------------
+   Wide-screen table, narrow-screen cards.
+
+   GAP: `ux4g-table-responsive` is `overflow-x: auto` and nothing more, so a
+   five-column table on a 360px screen hides its last three columns — including
+   the status and the button that opens the file — inside a container with no
+   visible sign that it scrolls. UX4G ships no stacked or card form of Table.
+
+   Exactly one of the pair is rendered at any width. `display: none` takes the
+   other out of the accessibility tree as well, so nothing is read out twice.
+   1024px is the top of Design.md §8's Mobile mode, where the grid drops to four
+   columns and a wide table stops fitting.
+   --------------------------------------------------------------------------- */
+.sutradhar-only-wide {
+  display: none;
+}
+
+.sutradhar-only-narrow {
+  display: grid;
+  gap: var(--ux4g-gap-row-s);
+}
+
+@media (min-width: 1024px) {
+  .sutradhar-only-wide {
+    display: block;
+  }
+
+  .sutradhar-only-narrow {
+    display: none;
+  }
+}
+
+/* ---------------------------------------------------------------------------
+   The sign-in screen sits in the middle of the window rather than against the
+   navbar, on any screen tall enough to have room to spare. `100dvh` accounts
+   for a phone browser's collapsing address bar, which `100vh` does not.
+   --------------------------------------------------------------------------- */
+.sutradhar-auth {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  min-height: calc(100dvh - 16rem);
+}
+
+/* The upload panel is one control on a page whose real content is the list of
+   files below it. Left unbounded it grows to the full 1140px measure and takes
+   the top half of the desk. UX4G's Upload is `inline-size: 100%` by design and
+   has no width variant, so the ceiling is set here, on our own wrapper. */
+.sutradhar-picker {
+  width: 100%;
+  max-width: 38rem;
 }

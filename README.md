@@ -430,7 +430,8 @@ backend/
 frontend/
   messages/      en.json · hi.json
   src/app/[locale]/    layout · login · home
-  src/components/      Logo · Ux4gRuntime · LanguageSwitcher
+  src/components/      Logo · Ux4gRuntime · SiteNav · Breadcrumb ·
+                       DocumentPicker · TableScroll · AuthArtwork
   src/lib/api.ts
   src/styles/app.css   the only custom CSS in the project
 ```
@@ -487,10 +488,20 @@ Both apply the moment they are chosen — no Save button, because there is nothi
 to lose if the page closes and a confirmation step for a preference is a step
 for nothing.
 
-**Appearance** is light, dark, or *match my device*. UX4G ships both palettes and
-switches on `data-theme` on `<html>`, so this only chooses between the two; no
-colour is defined here. The choice lives in `localStorage` rather than on the
-account: the same officer may reasonably want dark at home and light on the
+This screen is the *only* place either can be changed. Neither appears in the
+navigation bar. A service counter is a shared machine, and a theme or language
+control in the chrome of every page is one an officer changes by accident and
+then cannot find their way back from; putting both behind Settings means a
+change is always deliberate and always in one known place.
+
+**Appearance** is light, dark, or *match my device*, and **light is the
+default**. UX4G ships both palettes and switches on `data-theme` on `<html>`, so
+this only chooses between the two; no colour is defined here. The device's own
+`prefers-color-scheme` is honoured only once *match my device* has been picked
+explicitly — an officer who has never opened Settings gets the same screen as
+the colleague beside them, rather than one decided by whatever the browser on
+that desk happens to be set to. The choice lives in `localStorage` rather than on
+the account: the same officer may reasonably want dark at home and light on the
 office machine, and storing it on the account would make one override the other.
 Every read and write is wrapped — a locked-down browser profile throws rather
 than returning `null`, and a settings screen that takes the page down with it is
@@ -498,11 +509,15 @@ worse than one that forgets. While *match my device* is selected the page
 follows `prefers-color-scheme` live, so a machine that switches at sunset does
 not leave a light page until the next reload.
 
-**Language** is the existing `en`/`hi` switch, shown here as well as in the
-header. Each option is written in its own script and carries `lang`, so a screen
-reader pronounces "हिन्दी" as Hindi whichever language you already speak. The
-choice stays in the address rather than in storage, so a Hindi page that is
-bookmarked or sent to a colleague opens in Hindi.
+**Language** is the `en`/`hi` switch, and **English is the default**.
+`localeDetection` is off in `i18n/routing.ts`, so next-intl does not read
+`Accept-Language` and redirect: an office machine configured for Hindi would
+otherwise open in Hindi with nobody having chosen it, and the screen that owns
+the choice would be showing a language it never set. Each option is written in
+its own script and carries `lang`, so a screen reader pronounces "हिन्दी" as
+Hindi whichever language you already speak. The choice stays in the address
+rather than in storage, so a Hindi page that is bookmarked or sent to a colleague
+opens in Hindi.
 
 ### The theme applies before the first paint
 
@@ -554,13 +569,83 @@ theme is used; there are no brand colour overrides.
 No second CSS framework is present, and no UX4G component is rebuilt with custom
 markup. Custom CSS is limited to `frontend/src/styles/app.css` — a page shell, a
 reading-width container, a screen-reader utility, a skip link, a quiet footer,
-the logo's brand colour, and the contrast repoint above. Each carries an inline
-note saying which UX4G capability is missing.
+the logo's brand colour, the sign-in split and its illustration, the annotation
+marks on a document page, the table/card breakpoint, a handful of responsive
+corrections, and the contrast repoint above. Each carries an inline note saying
+which UX4G capability is missing.
+
+Two things UX4G ships were adjusted rather than replaced, both with a UX4G
+utility class on the element rather than a descendant rule overriding a component
+internal, which §13 of the contract forbids: `ux4g-jc-center` on the File
+Upload's action row, whose button is left-aligned under a centred panel, and the
+UX4G flex utilities on the Breadcrumb's list, whose shipped rule sets
+`flex-wrap` and `gap` but never `display`, leaving the gap inert.
 
 Sutradhar is a product built with UX4G, not a government portal. It does not
 carry a national emblem, a ministry masthead, or a "Government of India"
 attribution, because it is a demonstration system and claiming otherwise would
 be untrue.
+
+## Getting around, at every screen size
+
+**There is always a way back.** Every screen except the desk and sign-in carries
+a UX4G Breadcrumb, and the navigation bar carries the desk, the office screen
+(heads of department only) and Settings on every page. Nothing relies on the
+browser's Back button: an officer who reached a file by typing a reference, or
+who has been reading a document for ten minutes, has no reason to trust it and
+often cannot find it on a phone.
+
+**The navigation bar survives a phone.** It previously did not. The bar carried
+`ux4g-navbar-desktop`, and the shipped rule for that class is
+`@media (max-width: 768px) { display: none !important }` — so on a phone the
+entire bar, logo and links and Settings together, was removed from the page.
+There was no way to the desk, no way to the office screen, no way to Settings and
+no way back from anything. UX4G's answer is the paired `ux4g-navbar-mobile` slot,
+which `SiteNav` now provides: below 768px the links move into a UX4G Drawer
+behind one button labelled with the word **Menu**, not a bare hamburger, because
+the officers this is for have not used an app that taught them what three lines
+mean.
+
+The drawer behaves like the modal it declares itself to be. Escape closes it and
+returns focus to the button that opened it, Tab cycles within it rather than
+walking off into the page underneath, the page behind does not scroll
+(`ux4g-drawer-lock`, UX4G's own body class), and while it is shut it is `inert`
+so its links are not silently in the tab order. Choosing a link closes it.
+
+**Wide tables become cards.** `ux4g-table-responsive` is `overflow-x: auto` and
+nothing more, so the officer's five-column list of waiting files lost its status
+and its Review button off the side of a container with no sign that it scrolled.
+Below 1024px that list is rendered as UX4G Cards instead — every field visible,
+a full-width button per file. Exactly one of the two is in the DOM tree at a
+time: the other is `display: none`, which takes it out of the accessibility tree
+as well, so nothing is announced twice. Breaking the table's own markup with
+`display: block` would have kept one copy and thrown away the row-and-column
+relationships a screen reader depends on.
+
+The tables that really are tabular — the officer roster, the audit trail — keep
+scrolling sideways inside their own box, but that box is now a named region with
+a tab stop, because WCAG 2.1.1 requires a keyboard to be able to scroll
+scrollable content, and on a narrow screen it says in words that there is more to
+the side.
+
+**The page never scrolls sideways.** Verified at 360px on sign-in, the desk, the
+review screen, Settings and the office screen: `document.scrollWidth` equals
+`window.innerWidth` on all of them.
+
+## Choosing a document
+
+The upload control is UX4G's File Upload component, not a bare
+`<input type="file">`. A native file input is a control whose label the browser
+writes, in the browser's own language — so a Hindi screen still read "No file
+chosen" in English — and whose target is far under the 44px minimum.
+
+The native input still does the work; it is only moved out of sight, so the file
+dialogue, the browser's permissions and the accept filter all behave exactly as
+they normally do. Nothing here reimplements a file picker. It has one tab stop:
+the panel is a drop target for a mouse, and dragging is never the only way to do
+anything. Each state — waiting, uploading, received, refused — is written inside
+the panel in words, not carried by the border colour UX4G changes underneath it,
+and the file that was chosen is announced in a live region.
 
 ## The marks are on the document
 

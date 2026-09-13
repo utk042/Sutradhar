@@ -2,9 +2,15 @@
  * Choosing light or dark.
  *
  * UX4G ships both palettes and switches on `data-theme` on the root element, so
- * this only decides which of the two is in force. Three choices, because
- * "match my device" is what most people actually want and neither of the other
- * two expresses it.
+ * this only decides which of the two is in force. Three choices; "match my
+ * device" is offered but is not the default.
+ *
+ * **Light is the default, and nothing but the Settings screen changes it.** A
+ * service counter is a shared machine: whatever the last person's browser was
+ * set to should not decide what the next officer sees, and an officer who has
+ * never opened Settings should get the same screen as the colleague beside
+ * them. So the device preference is honoured only once it has been chosen
+ * explicitly.
  *
  * The preference is per browser, in localStorage. It is a display setting, not
  * a fact about the officer: they may reasonably want dark at home and light on
@@ -25,7 +31,7 @@ export function readThemeChoice(): ThemeChoice {
   } catch {
     /* storage unavailable — fall through to the default */
   }
-  return 'system';
+  return 'light';
 }
 
 export function resolveTheme(choice: ThemeChoice): 'light' | 'dark' {

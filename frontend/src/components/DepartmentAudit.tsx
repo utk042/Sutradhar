@@ -3,6 +3,7 @@
 import {useEffect, useState} from 'react';
 import {useFormatter, useTranslations} from 'next-intl';
 import {getAudit, type AuditPage} from '@/lib/api';
+import TableScroll from '@/components/TableScroll';
 
 /**
  * The department's record of what happened.
@@ -59,7 +60,7 @@ export default function DepartmentAudit() {
         </div>
       ) : (
         <>
-          <div className="sutradhar-table-scroll">
+          <TableScroll label={t('auditTitle')}>
             <table className="ux4g-table ux4g-table-m ux4g-table-zebra-rows ux4g-w-100">
               <thead>
                 <tr>
@@ -95,7 +96,7 @@ export default function DepartmentAudit() {
                 ))}
               </tbody>
             </table>
-          </div>
+          </TableScroll>
 
           {page.total > PAGE_SIZE && (
             <nav className="ux4g-d-flex ux4g-ai-center ux4g-gap-m ux4g-mt-s sutradhar-wrap">

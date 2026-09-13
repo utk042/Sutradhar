@@ -3,6 +3,7 @@
 import {useEffect, useState} from 'react';
 import {useFormatter, useTranslations} from 'next-intl';
 import {Link, useRouter} from '@/i18n/routing';
+import Breadcrumb from '@/components/Breadcrumb';
 import {getDocument, me, type CurrentUser, type DocumentDetail} from '@/lib/api';
 
 /**
@@ -14,6 +15,8 @@ import {getDocument, me, type CurrentUser, type DocumentDetail} from '@/lib/api'
  */
 export default function DecisionClient({documentId}: {documentId: number}) {
   const t = useTranslations('decision');
+  const tn = useTranslations('nav');
+  const tr = useTranslations('review');
   const format = useFormatter();
   const router = useRouter();
   const [doc, setDoc] = useState<DocumentDetail | null>(null);
@@ -47,6 +50,14 @@ export default function DecisionClient({documentId}: {documentId: number}) {
 
   return (
     <section className="sutradhar-narrow ux4g-p-l">
+      <Breadcrumb
+        label={tn('breadcrumb')}
+        items={[
+          {label: tn('desk'), href: '/'},
+          {label: tr('crumb', {reference: doc.public_ref}), href: `/review/${doc.id}`},
+          {label: t('crumb')}
+        ]}
+      />
       <div
         className={`ux4g-alert ${approved ? 'ux4g-alert-success' : 'ux4g-alert-error'} ux4g-mb-l`}
         role="status"

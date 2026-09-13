@@ -2,6 +2,7 @@
 
 import {useCallback, useEffect, useId, useState} from 'react';
 import {useTranslations} from 'next-intl';
+import TableScroll from '@/components/TableScroll';
 import {
   createOfficer,
   listOfficers,
@@ -202,7 +203,7 @@ export default function OfficerRoster({onChanged}: {onChanged: () => void}) {
           </div>
         </div>
       ) : (
-        <div className="sutradhar-table-scroll">
+        <TableScroll label={t('officersTitle')}>
           <table className="ux4g-table ux4g-table-m ux4g-w-100">
             <thead>
               <tr>
@@ -257,7 +258,7 @@ export default function OfficerRoster({onChanged}: {onChanged: () => void}) {
               ))}
             </tbody>
           </table>
-        </div>
+        </TableScroll>
       )}
 
       {/* Where documents are read. The wording is about where the data goes,

@@ -1,40 +1,55 @@
-'use client';
+"use client";
 
-import {useCallback, useEffect, useRef, useState} from 'react';
-import {useFormatter, useTranslations} from 'next-intl';
-import {Link, useRouter} from '@/i18n/routing';
-import StatusTag from '@/components/StatusTag';
+import { useCallback, useEffect, useState } from "react";
+import { useFormatter, useTranslations } from "next-intl";
+import { Link, useRouter } from "@/i18n/routing";
+import DocumentPicker, { type PickerState } from "@/components/DocumentPicker";
+import StatusTag from "@/components/StatusTag";
+import TableScroll from "@/components/TableScroll";
 import {
   listDocuments,
-  logout,
   me,
   uploadDocument,
-  type CurrentUser,
-  type DocumentSummary
-} from '@/lib/api';
+  type DocumentSummary,
+} from "@/lib/api";
 
 /**
  * The officer's desk: one action, and the list of files waiting.
  *
- * The upload button is the only primary action on the screen. While any document
- * is still being checked the list refreshes on a timer, so an officer who
- * uploads and waits sees the row change state without touching anything. The
- * polling stops as soon as nothing is in flight — Phase 3 replaces it with a
- * live stream for the review screen itself.
+ * The upload panel is the only primary action on the screen. Signing out and
+ * moving between screens live in the navigation bar, where they are reachable
+ * from every page rather than from this one — which is also what keeps this
+ * screen down to the single action the brief asks for.
+ *
+ * While any document is still being checked the list refreshes on a timer, so
+ * an officer who uploads and waits sees the row change state without touching
+ * anything. The polling stops as soon as nothing is in flight.
  */
 const POLL_MS = 2000;
 
+/** Codes the locale file has a sentence for. Anything else is `unexpected`. */
+const KNOWN_UPLOAD_ERRORS = [
+  "upload_empty",
+  "upload_too_large",
+  "upload_wrong_type",
+  "upload_type_mismatch",
+  "upload_unreadable",
+  "network",
+];
+
 export default function HomeClient() {
-  const t = useTranslations('home');
-  const tu = useTranslations('upload');
+  const t = useTranslations("home");
+  const tu = useTranslations("upload");
   const format = useFormatter();
   const router = useRouter();
 
-  const [user, setUser] = useState<CurrentUser | null>(null);
+  const [ready, setReady] = useState(false);
   const [documents, setDocuments] = useState<DocumentSummary[]>([]);
-  const [uploading, setUploading] = useState(false);
+  const [picker, setPicker] = useState<PickerState>("idle");
+  const [chosen, setChosen] = useState<{ name: string; size: number } | null>(
+    null,
+  );
   const [error, setError] = useState<string | null>(null);
-  const fileInput = useRef<HTMLInputElement>(null);
 
   const refresh = useCallback(async () => {
     const result = await listDocuments();
@@ -46,10 +61,10 @@ export default function HomeClient() {
     me().then((result) => {
       if (!active) return;
       if (result.ok) {
-        setUser(result.data);
+        setReady(true);
         refresh();
       } else {
-        router.replace('/login');
+        router.replace("/login");
       }
     });
     return () => {
@@ -59,7 +74,7 @@ export default function HomeClient() {
 
   // Keep refreshing only while something is actually being checked.
   const inFlight = documents.some(
-    (d) => d.status === 'uploaded' || d.status === 'processing'
+    (d) => d.status === "uploaded" || d.status === "processing",
   );
   useEffect(() => {
     if (!inFlight) return;
@@ -67,130 +82,143 @@ export default function HomeClient() {
     return () => clearInterval(timer);
   }, [inFlight, refresh]);
 
-  async function handleFile(event: React.ChangeEvent<HTMLInputElement>) {
-    const file = event.target.files?.[0];
-    if (!file) return;
+  async function handleFile(file: File) {
     setError(null);
-    setUploading(true);
+    setChosen({ name: file.name, size: file.size });
+    setPicker("uploading");
+
     const result = await uploadDocument(file);
-    setUploading(false);
-    // Let the same file be chosen again after a failure.
-    if (fileInput.current) fileInput.current.value = '';
 
     if (result.ok) {
+      setPicker("done");
       refresh();
       return;
     }
-    const known = [
-      'upload_empty',
-      'upload_too_large',
-      'upload_wrong_type',
-      'upload_type_mismatch',
-      'upload_unreadable',
-      'network'
-    ];
-    setError(known.includes(result.code) ? tu(`errors.${result.code}`) : tu('errors.unexpected'));
+
+    setPicker("error");
+    setError(
+      KNOWN_UPLOAD_ERRORS.includes(result.code)
+        ? tu(`errors.${result.code}`)
+        : tu("errors.unexpected"),
+    );
   }
 
-  if (user === null) return null;
+  function uploadedAt(doc: DocumentSummary) {
+    return format.dateTime(new Date(doc.uploaded_at), {
+      dateStyle: "medium",
+      timeStyle: "short",
+    });
+  }
+
+  if (!ready) return null;
 
   return (
     <>
-      <div className="ux4g-d-flex ux4g-ai-center ux4g-jc-between ux4g-gap-m ux4g-mb-l sutradhar-wrap">
-        <p className="ux4g-body-m-default">{t('signedInAs', {name: user.full_name})}</p>
-        <button
-          type="button"
-          className="ux4g-btn ux4g-btn-text-neutral ux4g-btn-lg"
-          onClick={async () => {
-            await logout();
-            router.replace('/login');
-          }}
-        >
-          {t('signOut')}
-        </button>
-      </div>
-
-      {error !== null && (
-        <div className="ux4g-alert ux4g-alert-error ux4g-mb-l" role="alert">
-          <span className="ux4g-body-m-default">{error}</span>
-        </div>
-      )}
-
-      <div className="ux4g-mb-xl">
-        <label htmlFor="document-upload" className="ux4g-heading-xs-strong ux4g-d-block ux4g-mb-xs">
-          {t('chooseFile')}
-        </label>
-        <p className="ux4g-body-s-default ux4g-text-neutral-secondary ux4g-mb-s">
-          {t('fileHint')}
-        </p>
-        {/* The file input is the control; the button label is its own text, so
-            there is no second control competing with it. */}
-        <input
-          ref={fileInput}
-          id="document-upload"
-          type="file"
-          accept=".pdf,.png,.jpg,.jpeg,application/pdf,image/png,image/jpeg"
-          onChange={handleFile}
-          disabled={uploading}
-          className="sutradhar-file-input"
+      <div className="ux4g-mb-xl sutradhar-picker">
+        <DocumentPicker
+          state={picker}
+          fileName={chosen?.name ?? null}
+          fileSize={chosen?.size ?? null}
+          error={error}
+          onChoose={handleFile}
         />
-        {uploading && (
-          <p className="ux4g-body-s-default ux4g-mt-s" role="status">
-            {t('uploading')}
-          </p>
-        )}
       </div>
 
-      <h2 className="ux4g-heading-s-strong ux4g-mb-s">{t('pendingTitle')}</h2>
+      <h2 className="ux4g-heading-s-strong ux4g-mb-s">{t("pendingTitle")}</h2>
 
       {documents.length === 0 ? (
         <div className="ux4g-empty-state">
           <div className="ux4g-empty-state-content">
-            <p className="ux4g-heading-xs-strong">{t('emptyTitle')}</p>
-            <p className="ux4g-body-m-default ux4g-text-neutral-secondary">{t('emptyBody')}</p>
+            <p className="ux4g-heading-xs-strong">{t("emptyTitle")}</p>
+            <p className="ux4g-body-m-default ux4g-text-neutral-secondary">
+              {t("emptyBody")}
+            </p>
           </div>
         </div>
       ) : (
-        <div className="sutradhar-table-scroll">
-          <table className="ux4g-table ux4g-table-m ux4g-table-responsive ux4g-w-100">
-            <thead>
-              <tr>
-                <th scope="col">{t('colReference')}</th>
-                <th scope="col">{t('colDocument')}</th>
-                <th scope="col">{t('colStatus')}</th>
-                <th scope="col">{t('colUploaded')}</th>
-                <th scope="col">
-                  <span className="sutradhar-sr-only">{t('review')}</span>
-                </th>
-              </tr>
-            </thead>
-            <tbody>
-              {documents.map((doc) => (
-                <tr key={doc.id}>
-                  <td className="ux4g-table-cell-text">{doc.public_ref}</td>
-                  <td className="ux4g-table-cell-text">{doc.original_filename}</td>
-                  <td className="ux4g-table-cell-tags">
+        <>
+          {/* The same list, told twice, because a five-column table cannot be
+              read on a 360px screen and UX4G's `ux4g-table-responsive` is only
+              `overflow-x: auto` — the status and the Review button end up off
+              the side of a container with nothing to say it scrolls.
+
+              Only one of the two is ever rendered: the other is `display:none`,
+              which removes it from the accessibility tree as well as from
+              sight, so nothing is announced twice. Breaking the table's own
+              markup with `display:block` would have kept one copy but thrown
+              away the row-and-column relationships a screen reader depends on,
+              which is not a trade worth making in a government service. */}
+          <div className="sutradhar-only-wide">
+            <TableScroll label={t("pendingTitle")}>
+              <table className="ux4g-table ux4g-table-m ux4g-table-responsive ux4g-w-100">
+                <thead>
+                  <tr>
+                    <th scope="col">{t("colReference")}</th>
+                    <th scope="col">{t("colDocument")}</th>
+                    <th scope="col">{t("colStatus")}</th>
+                    <th scope="col">{t("colUploaded")}</th>
+                    <th scope="col">
+                      <span className="sutradhar-sr-only">{t("review")}</span>
+                    </th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {documents.map((doc) => (
+                    <tr key={doc.id}>
+                      <td className="ux4g-table-cell-text">{doc.public_ref}</td>
+                      <td className="ux4g-table-cell-text sutradhar-break-word">
+                        {doc.original_filename}
+                      </td>
+                      <td className="ux4g-table-cell-tags">
+                        <StatusTag status={doc.status} />
+                      </td>
+                      <td className="ux4g-table-cell-text">
+                        {uploadedAt(doc)}
+                      </td>
+                      <td className="ux4g-table-cell-text">
+                        <Link
+                          href={`/review/${doc.id}`}
+                          className="ux4g-btn ux4g-btn-text-primary ux4g-btn-lg"
+                        >
+                          {doc.status === "pending_review"
+                            ? t("review")
+                            : t("open")}
+                        </Link>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </TableScroll>
+          </div>
+
+          <ul className="sutradhar-only-narrow sutradhar-list-reset sutradhar-doc-cards">
+            {documents.map((doc) => (
+              <li key={doc.id} className="ux4g-card ux4g-card-outline">
+                <div className="ux4g-card-body">
+                  <p className="ux4g-heading-xxs-strong ux4g-mb-xs sutradhar-break-word">
+                    {doc.original_filename}
+                  </p>
+                  <p className="ux4g-body-s-default ux4g-text-neutral-secondary ux4g-mb-xs">
+                    {t("colReference")}: {doc.public_ref}
+                  </p>
+                  <p className="ux4g-mb-xs">
                     <StatusTag status={doc.status} />
-                  </td>
-                  <td className="ux4g-table-cell-text">
-                    {format.dateTime(new Date(doc.uploaded_at), {
-                      dateStyle: 'medium',
-                      timeStyle: 'short'
-                    })}
-                  </td>
-                  <td className="ux4g-table-cell-text">
-                    <Link
-                      href={`/review/${doc.id}`}
-                      className="ux4g-btn ux4g-btn-text-primary ux4g-btn-lg"
-                    >
-                      {doc.status === 'pending_review' ? t('review') : t('open')}
-                    </Link>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
+                  </p>
+                  <p className="ux4g-body-s-default ux4g-text-neutral-secondary ux4g-mb-s">
+                    {t("colUploaded")}: {uploadedAt(doc)}
+                  </p>
+                  <Link
+                    href={`/review/${doc.id}`}
+                    className="ux4g-btn ux4g-btn-outline-primary ux4g-btn-lg ux4g-w-100"
+                  >
+                    {doc.status === "pending_review" ? t("review") : t("open")}
+                  </Link>
+                </div>
+              </li>
+            ))}
+          </ul>
+        </>
       )}
     </>
   );

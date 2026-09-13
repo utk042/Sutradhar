@@ -3,6 +3,7 @@
 import {useCallback, useEffect, useState} from 'react';
 import {useFormatter, useTranslations} from 'next-intl';
 import {useRouter} from '@/i18n/routing';
+import Breadcrumb from '@/components/Breadcrumb';
 import OfficerRoster from '@/components/OfficerRoster';
 import DepartmentAudit from '@/components/DepartmentAudit';
 import {
@@ -26,6 +27,7 @@ import {
  */
 export default function DashboardClient() {
   const t = useTranslations('dashboard');
+  const tn = useTranslations('nav');
   const format = useFormatter();
   const router = useRouter();
 
@@ -66,6 +68,10 @@ export default function DashboardClient() {
 
   return (
     <section className="sutradhar-page ux4g-p-l">
+      <Breadcrumb
+        label={tn('breadcrumb')}
+        items={[{label: tn('desk'), href: '/'}, {label: tn('dashboard')}]}
+      />
       <h1 className="ux4g-heading-l-strong ux4g-mb-xs">
         {t('title', {department: department.name})}
       </h1>

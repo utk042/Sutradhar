@@ -5,7 +5,7 @@
  *   validation -> a failed sign-in -> a keyboard-only successful one ->
  *   the session cookie being invisible to JavaScript -> upload -> checks ->
  *   findings with evidence -> approve over a blocking finding ->
- *   reject in Hindi -> sign out.
+ *   switch to Hindi from Settings -> reject in Hindi -> sign out.
  *
  * Both servers must already be running (see README).
  *   set -a && . ../.env && set +a && npm run smoke
@@ -81,7 +81,7 @@ console.log('    actual:', (await ctx.cookies())
 
 // ------------------------------------------------- upload, review, approve --
 step(5, 'upload a certificate whose date of birth disagrees with the records');
-await p.setInputFiles('#document-upload', `${SAMPLES}/birth-certificate-dob-mismatch.pdf`);
+await p.setInputFiles('input[type=file]', `${SAMPLES}/birth-certificate-dob-mismatch.pdf`);
 await p.waitForFunction(
   () => document.body.innerText.includes('Waiting for your decision'),
   null, {timeout: 20000});
@@ -125,11 +125,17 @@ await p.screenshot({path: `${shots}/p2-confirmation.png`, fullPage: true});
 step(9, 'reject a document with no matching record, in Hindi');
 await p.locator('a', {hasText: 'Back to your desk'}).click();
 await p.waitForURL(/\/en$/, {timeout: 8000});
-await p.setInputFiles('#document-upload', `${SAMPLES}/income-certificate-unknown.pdf`);
+await p.setInputFiles('input[type=file]', `${SAMPLES}/income-certificate-unknown.pdf`);
 await p.waitForFunction(
   () => (document.body.innerText.match(/Waiting for your decision/g) || []).length >= 1,
   null, {timeout: 20000});
+// Language is a setting now, not a control in the chrome of every page: the
+// only way to Hindi is the Settings screen, so that is the way the test goes.
+await p.locator('nav a', {hasText: 'Settings'}).first().click();
+await p.waitForURL(/\/en\/settings$/, {timeout: 8000});
 await p.getByRole('button', {name: 'हिन्दी'}).click();
+await p.waitForURL(/\/hi\/settings$/, {timeout: 8000});
+await p.locator('nav a', {hasText: 'आपका डेस्क'}).first().click();
 await p.waitForURL(/\/hi$/, {timeout: 8000});
 await p.locator('table tbody tr a').first().click();
 await p.waitForURL(/\/review\/\d+$/, {timeout: 8000});
