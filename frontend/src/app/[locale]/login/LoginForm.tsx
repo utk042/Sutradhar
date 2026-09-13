@@ -27,19 +27,20 @@ import {login, type DeclaredRole} from '@/lib/api';
  *
  * ## Showing the password
  *
- * A checkbox that says "Show password", not an eye in the corner of the field.
+ * An eye button inside the field, in UX4G's own `ux4g-input-actions` slot.
  *
- * UX4G does ship the slot for an in-field button — `ux4g-input-actions` and
- * `ux4g-input-action-btn` — but at `ux4g-input-lg` the shipped rule sizes that
- * button 1.25rem square. Twenty pixels is half the 44px this service holds
- * itself to and below even WCAG 2.2's 24px floor, and the only way to grow it
- * is to override a component internal, which §13 of the UX4G contract forbids.
+ * One accessibility fix goes with it. The shipped rule
+ * `.ux4g-input-lg .ux4g-input-action-btn { height: 1.25rem; width: 1.25rem }`
+ * makes that button a 20px target — under half the 44px this service holds
+ * itself to, and below even WCAG 2.2's 24px floor. `sutradhar-reveal` changes
+ * nothing about the button: it adds a transparent pseudo-element that extends
+ * the *hit area* to 44x44, which is what WCAG measures. The field still looks
+ * exactly as UX4G drew it. See `app.css` for the arithmetic.
  *
- * The checkbox is also simply better here. The brief says every state is
- * labelled in words and never by an icon alone, and these officers have not
- * used an app that taught them what a crossed-out eye means. A checkbox says
- * what it does, says whether it is on, has a 48px target, and is announced
- * correctly by a screen reader with no ARIA of our own.
+ * The icon is never the only signal. The button's accessible name is a verb —
+ * "Show password" or "Hide password" — and it changes with the state, so a
+ * screen reader announces the new name the moment it is pressed. The field
+ * showing plain text is the visible confirmation.
  *
  * ## Choosing a role
  *
@@ -51,9 +52,24 @@ import {login, type DeclaredRole} from '@/lib/api';
  * the password check so that it can never answer "which role is this number?"
  * to someone who has not proved they own the account.
  *
- * Nothing is pre-selected. Two taps to sign in rather than one is the cost of
- * the choice being a real one, and a wrong default that quietly works for most
- * people is how the head of department ends up seeing an error every morning.
+ * A native `<select>` in UX4G's Input shell, not UX4G's own Dropdown. Two
+ * reasons, and the first is decisive:
+ *
+ * 1. UX4G's Dropdown is driven by the global runtime, which writes
+ *    `valueNode.textContent` and toggles classes on the element directly.
+ *    React owns that subtree and will overwrite both on its next render. The
+ *    two cannot both be in charge of the same DOM.
+ * 2. A native select is the better control for these users anyway: on a phone
+ *    it opens the operating system's own picker, which is large, familiar and
+ *    needs no learning.
+ *
+ * The shipped package has no Select — `.ux4g-select-*` are `user-select`
+ * utilities — so the field is composed from the Input classes with the chevron
+ * and the native appearance reset in `app.css`.
+ *
+ * Nothing is pre-selected. Two steps to sign in rather than one is the cost of
+ * the choice being a real one, and a default that quietly works for most people
+ * is how the head of department ends up seeing an error every morning.
  */
 
 type FieldErrors = {mobile?: string; password?: string; role?: string};
@@ -69,10 +85,9 @@ export default function LoginForm() {
   const mobileErrorId = useId();
   const passwordId = useId();
   const passwordErrorId = useId();
-  const showPasswordId = useId();
-  const roleLegendId = useId();
+  const roleId = useId();
+  const roleHintId = useId();
   const roleErrorId = useId();
-  const roleName = useId();
 
   const [mobile, setMobile] = useState('');
   const [password, setPassword] = useState('');
@@ -179,6 +194,23 @@ export default function LoginForm() {
             aria-invalid={fieldErrors.password ? true : undefined}
             aria-describedby={fieldErrors.password ? passwordErrorId : undefined}
           />
+          <div className="ux4g-input-actions">
+            <button
+              type="button"
+              className="ux4g-input-action-btn sutradhar-reveal"
+              /* The name is a verb and it changes with the state, so pressing
+                 it announces what it now does. `aria-pressed` on top of a
+                 changing name would have a screen reader say both, which
+                 contradicts itself. */
+              aria-label={showPassword ? t('hidePassword') : t('showPassword')}
+              aria-controls={passwordId}
+              onClick={() => setShowPassword((shown) => !shown)}
+            >
+              <span className="ux4g-icon-outlined" aria-hidden="true">
+                {showPassword ? 'visibility_off' : 'visibility'}
+              </span>
+            </button>
+          </div>
         </div>
         {fieldErrors.password && (
           <span className="ux4g-input-helper" id={passwordErrorId}>
@@ -187,107 +219,51 @@ export default function LoginForm() {
         )}
       </div>
 
-      <label
-        className="ux4g-checkbox ux4g-checkbox-lg sutradhar-tap-target ux4g-mb-xl"
-        htmlFor={showPasswordId}
+      <div
+        className={`ux4g-input-container ux4g-input-lg ${
+          fieldErrors.role ? 'ux4g-input-error' : 'ux4g-input-default'
+        } ux4g-mb-xl`}
       >
-        <input
-          id={showPasswordId}
-          type="checkbox"
-          className="ux4g-checkbox-input"
-          checked={showPassword}
-          onChange={(e) => setShowPassword(e.target.checked)}
-        />
-        <span className="ux4g-checkbox-control">
-          <span className="ux4g-checkmark" />
-        </span>
-        <span className="ux4g-checkbox-content">
-          <span className="ux4g-checkbox-header">
-            <span className="ux4g-checkbox-label">{t('showPassword')}</span>
+        <label htmlFor={roleId}>{t('roleLabel')}</label>
+        <div className="ux4g-input">
+          <select
+            id={roleId}
+            name="role"
+            className="ux4g-input-input sutradhar-select"
+            value={role ?? ''}
+            onChange={(e) => setRole((e.target.value || null) as DeclaredRole | null)}
+            aria-invalid={fieldErrors.role ? true : undefined}
+            aria-describedby={fieldErrors.role ? roleErrorId : roleHintId}
+          >
+            {/* Empty and disabled, so nothing is chosen until the officer
+                chooses it. Kept in the list rather than hidden: on a phone the
+                native picker opens on the current value, and an option the
+                wheel can land on but not select is worse than one that simply
+                reads as the question. */}
+            <option value="" disabled>
+              {t('rolePlaceholder')}
+            </option>
+            {ROLES.map((option) => (
+              <option key={option} value={option}>
+                {t(`roles.${option}`)}
+              </option>
+            ))}
+          </select>
+          {/* Decorative: the control is already announced as a combo box. */}
+          <span className="ux4g-input-actions" aria-hidden="true">
+            <span className="ux4g-icon-outlined">expand_more</span>
           </span>
-          <span className="ux4g-checkbox-description">{t('showPasswordHint')}</span>
-        </span>
-      </label>
-
-      {/* A real fieldset, so the question is read out before the options rather
-          than each option arriving with no idea what it answers. */}
-      <fieldset
-        className="sutradhar-fieldset ux4g-mb-xl"
-        aria-describedby={fieldErrors.role ? roleErrorId : undefined}
-      >
-        <legend id={roleLegendId} className="ux4g-heading-xxs-strong ux4g-mb-xs">
-          {t('roleLabel')}
-        </legend>
-        <p className="ux4g-body-s-default ux4g-text-neutral-secondary ux4g-mb-s">
-          {t('roleHint')}
-        </p>
-
-        <div className="sutradhar-role-options ux4g-mb-s">
-          {ROLES.map((option) => (
-            /* Two things are needed to make the whole row selectable, and the
-               second is a workaround for a bug in the shipped UX4G runtime.
-
-               `htmlFor`/`id` pair the label with its input, which is good
-               practice regardless. It is not sufficient here, because
-               `ux4g.js` installs a delegated click handler on `document`:
-
-                 const radio = U.closest(e.target, ".ux4g-radio");
-                 if (radio && !U.closest(e.target,
-                     ".ux4g-radio-input, .ux4g-radio-control")) {
-                   e.preventDefault();
-                   return;
-                 }
-
-               Every click inside a Radio that is not on the 20px circle has
-               its default action cancelled — so clicking the word "Officer"
-               does nothing at all. Verified in a browser: clicking
-               `.ux4g-radio-control` selects the option, clicking
-               `.ux4g-radio-label` does not.
-
-               That shrinks the real target to 20 pixels whatever padding the
-               row carries, and breaks the oldest convention in forms: that the
-               text beside a radio selects it. So the row sets the value itself
-               on click. `preventDefault` does not stop React's own handler, and
-               a radio cannot be un-selected, so a click on the circle — which
-               fires both this and the input's `onChange` — sets the same value
-               twice and changes nothing.
-
-               Reported in the completion notes as UX4G contract debt rather
-               than fixed silently. */
-            <label
-              key={option}
-              htmlFor={`${roleName}-${option}`}
-              className="ux4g-radio ux4g-radio-md sutradhar-tap-target"
-              onClick={() => setRole(option)}
-            >
-              <input
-                id={`${roleName}-${option}`}
-                type="radio"
-                className="ux4g-radio-input"
-                name={roleName}
-                value={option}
-                checked={role === option}
-                onChange={() => setRole(option)}
-                aria-invalid={fieldErrors.role ? true : undefined}
-              />
-              <span className="ux4g-radio-control">
-                <span className="ux4g-radiomark" />
-              </span>
-              <span className="ux4g-radio-content">
-                <span className="ux4g-radio-header">
-                  <span className="ux4g-radio-label">{t(`roles.${option}`)}</span>
-                </span>
-              </span>
-            </label>
-          ))}
         </div>
-
-        {fieldErrors.role && (
-          <p className="ux4g-input-helper ux4g-mt-xs" id={roleErrorId}>
+        {fieldErrors.role ? (
+          <span className="ux4g-input-helper" id={roleErrorId}>
             {fieldErrors.role}
-          </p>
+          </span>
+        ) : (
+          <span className="ux4g-input-helper" id={roleHintId}>
+            {t('roleHint')}
+          </span>
         )}
-      </fieldset>
+      </div>
 
       <button
         type="submit"

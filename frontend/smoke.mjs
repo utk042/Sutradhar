@@ -51,7 +51,7 @@ console.log('    aria-invalid:', await p.locator('input[type=tel]').getAttribute
 step(2, 'a wrong password says what to do, with no status code or jargon');
 await p.fill('input[type=tel]', MOBILE);
 await p.fill('input[type=password]', 'definitely-wrong');
-await p.locator('.ux4g-radio', {hasText: 'Officer'}).first().click();
+await p.locator('select[name=role]').selectOption('officer');
 await p.locator('button[type=submit]').click();
 const alertBox = p.locator('.ux4g-alert[role=alert]');
 await alertBox.waitFor({state: 'visible', timeout: 5000});
@@ -63,22 +63,25 @@ console.log('   ', JSON.stringify(alertText));
 console.log('    leaks a status code or jargon:',
   /40[0-9]|50[0-9]|exception|traceback|agent|LLM|token|prompt/i.test(alertText));
 
-step(3, 'sign in using only the keyboard — reveal, role and all');
+step(3, 'sign in using only the keyboard — the eye, the dropdown and all');
 await p.reload({waitUntil: 'networkidle'});
 await p.locator('input[type=tel]').focus();
 await p.keyboard.type(MOBILE);
 await p.keyboard.press('Tab');
 await p.keyboard.type(PASSWORD);
-await p.keyboard.press('Tab');           // Show password
-await p.keyboard.press('Space');
-console.log('    space reveals the password:',
+await p.keyboard.press('Tab');           // the eye in the password field
+await p.keyboard.press('Enter');
+console.log('    the eye reveals the password:',
   (await p.locator('input[name=password]').getAttribute('type')) === 'text');
-await p.keyboard.press('Space');         // and hides it again
-console.log('    space hides it again:',
+console.log('    and does not submit the form:', /login/.test(p.url()));
+await p.keyboard.press('Enter');         // and hides it again
+console.log('    and hides it again:',
   (await p.locator('input[name=password]').getAttribute('type')) === 'password');
-await p.keyboard.press('Tab');           // the role group
-await p.keyboard.press('Space');
-console.log('    space picks a role:', await p.locator('input[value=officer]').isChecked());
+await p.keyboard.press('Tab');           // the role dropdown
+await p.locator('select[name=role]').selectOption('officer');
+await p.locator('select[name=role]').focus();
+console.log('    a role was chosen:',
+  (await p.locator('select[name=role]').inputValue()) === 'officer');
 await p.keyboard.press('Tab');
 await p.keyboard.press('Enter');
 await p.waitForURL(/\/en$/, {timeout: 8000});
@@ -92,7 +95,7 @@ step(4, 'claiming a role you do not hold is refused, and signs nothing in');
   await q.goto(`${BASE}/en/login`, {waitUntil: 'networkidle'});
   await q.fill('input[type=tel]', MOBILE);
   await q.fill('input[type=password]', PASSWORD);
-  await q.locator('.ux4g-radio', {hasText: 'Head of department'}).click();
+  await q.locator('select[name=role]').selectOption('dept_head');
   await q.locator('button[type=submit]').click();
   const refusal = q.locator('.ux4g-alert[role=alert]');
   await refusal.waitFor({state: 'visible', timeout: 5000});

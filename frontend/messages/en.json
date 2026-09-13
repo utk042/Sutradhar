@@ -31,13 +31,14 @@
     "visualCaption": "Three checks run against the records at the same time. Everything they find is gathered and handed to you. Nothing is decided until you decide it.",
     "visualTitle": "Checked by the system. Decided by you.",
     "showPassword": "Show password",
-    "showPasswordHint": "Tick this to read what you have typed.",
     "roleLabel": "Sign in as",
     "roleHint": "Choose how you are registered in this office.",
     "roles": {
       "officer": "Officer",
       "dept_head": "Head of department"
-    }
+    },
+    "hidePassword": "Hide password",
+    "rolePlaceholder": "Choose one"
   },
   "home": {
     "title": "Your desk",

@@ -583,24 +583,28 @@ Upload's action row, whose button is left-aligned under a centred panel, and the
 UX4G flex utilities on the Breadcrumb's list, whose shipped rule sets
 `flex-wrap` and `gap` but never `display`, leaving the gap inert.
 
-Three defects in the shipped package were worked around rather than silently
+Four defects in the shipped package were worked around rather than silently
 absorbed, and are listed here so they can be reported upstream:
 
-1. **The Radio's label text does not select it.** `ux4g.js` installs a
+1. **In-field action buttons are a 20px target.**
+   `.ux4g-input-lg .ux4g-input-action-btn` is sized 1.25rem square, under the
+   44px in Design.md §9 and under WCAG 2.2's 24px floor, with no larger variant
+   at any input size. Worked around on the password reveal by extending the hit
+   area rather than the button; see "Showing the password", above.
+2. **The Radio's label text does not select it.** `ux4g.js` installs a
    delegated click handler that calls `preventDefault()` on every click inside
    `.ux4g-radio` that is not on `.ux4g-radio-input` or `.ux4g-radio-control`.
    Clicking the word beside a radio therefore does nothing, which breaks the
    oldest convention in forms and shrinks the real target to the 20px circle
    whatever padding the row carries. The Checkbox has no equivalent handler and
-   behaves correctly. Worked around by setting the value from the row's own
-   click; a radio cannot be un-selected, so the duplicate event on the circle is
-   harmless.
-2. **A bare `.ux4g-icon-outlined` is invisible in the light theme.** A rule
+   behaves correctly. Nothing in the service uses Radio today — the role field
+   is a select — but the defect is real and worth reporting.
+3. **A bare `.ux4g-icon-outlined` is invisible in the light theme.** A rule
    intended for the topbar (`.ux4g-topbar__iconbtn .ux4g-icon-outlined`) carries
    the bare class in its selector list and sets `color:
    var(--ux4g-text-neutral-inverse)` — near-white on a white page. Icons are
    only used here inside components that set their own icon colour.
-3. **`.ux4g-navbar-desktop` is `display: none !important` below 768px** with no
+4. **`.ux4g-navbar-desktop` is `display: none !important` below 768px** with no
    automatic mobile counterpart, so a navbar built from the documented classes
    alone disappears entirely on a phone. See "Getting around", above.
 
@@ -615,21 +619,33 @@ Two controls beyond the mobile number and password.
 
 ### Showing the password
 
-A checkbox that says **Show password**, not an eye in the corner of the field.
+An eye button inside the field, in UX4G's own `ux4g-input-actions` slot, showing
+`visibility` while the password is hidden and `visibility_off` while it is
+shown.
 
-UX4G does ship the slot for an in-field button — `ux4g-input-actions` and
-`ux4g-input-action-btn` — but at `ux4g-input-lg` the shipped rule sizes that
-button 1.25rem square. Twenty pixels is under half the 44px this service holds
-itself to and below even WCAG 2.2's 24px floor, and the only way to grow it is
-to override a component internal, which §13 of the contract forbids.
+One accessibility fix goes with it. The shipped rule
 
-The checkbox is also the better control here. The brief says every state is
-labelled in words and never by an icon alone, and these officers have not used
-an app that taught them what a crossed-out eye means. It says what it does, says
-whether it is on, has a 48px target, and is announced correctly with no ARIA of
-our own. Only the input's `type` changes when it is ticked, so focus, the caret
-and any password manager see the same element throughout. Signing in unticks it,
-so a password is not left on screen for whoever sits down next.
+```css
+.ux4g-input-lg .ux4g-input-action-btn { height: 1.25rem; width: 1.25rem }
+```
+
+makes every in-field action button a 20px target — under half the 44px baseline
+in Design.md §9, and below even WCAG 2.2's 24px floor. **Nothing overrides it.**
+The button keeps the exact size UX4G gives it, and a transparent
+pseudo-element extends only the *hit area*, which is what WCAG measures:
+20px + 12px + 12px = 44px each way, and the field at `lg` is 48px tall with
+`overflow: hidden`, so a 44px target centred in it clears the clip by 2px. The
+field looks pixel for pixel as the design system drew it; measured at 44x44 in a
+browser. The real fix belongs upstream in the package, where every consumer
+would get it.
+
+The icon is never the only signal. The button's accessible name is a verb —
+"Show password" or "Hide password" — and it changes with the state, so a screen
+reader announces the new name the moment it is pressed. `aria-pressed` is
+deliberately not added on top of a changing name: a reader would then announce
+both, and they contradict each other. The field showing plain text is the
+visible confirmation. Signing in hides it again, so a password is not left on
+screen for whoever sits down next.
 
 ### Choosing a role
 
@@ -656,9 +672,28 @@ that the token's role still comes from the database when it matches, that a
 wrong password gives the identical generic answer whichever role was claimed,
 and that an invented role is rejected by the schema.
 
-Nothing is pre-selected. Two taps to sign in rather than one is the cost of the
-choice being a real one, and a default that quietly works for most people is how
-the head of department ends up seeing an error every morning.
+The control is a native `<select>` composed into UX4G's Input shell, not UX4G's
+own Dropdown. Two reasons, and the first is decisive:
+
+1. UX4G's Dropdown is driven by the global runtime, which writes
+   `valueNode.textContent` and toggles classes on the element directly. React
+   owns that subtree and overwrites both on its next render — the two cannot
+   both be in charge of the same DOM.
+2. A native select is the better control for these users anyway: on a phone it
+   opens the operating system's own picker, which is large, familiar and needs
+   no learning.
+
+The shipped package has no Select — the `.ux4g-select-*` classes in the
+stylesheet are `user-select` utilities, grep-verified — so the field is composed
+from the Input classes, with the chevron in the actions slot and the browser's
+default appearance reset in `app.css`. `.ux4g-input` supplies the border,
+background, radius, padding and focus ring, so it matches the two fields above
+it exactly.
+
+Nothing is pre-selected: the first option is an empty, disabled "Choose one".
+Two steps to sign in rather than one is the cost of the choice being a real one,
+and a default that quietly works for most people is how the head of department
+ends up seeing an error every morning.
 
 The field is optional on the API. Omitting it signs you in exactly as before,
 which is not a way around anything — the role comes from the account either way.
