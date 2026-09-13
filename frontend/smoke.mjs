@@ -3,6 +3,7 @@
  *
  * Drives a real browser through the whole journey:
  *   validation -> a failed sign-in -> a keyboard-only successful one ->
+ *   a refused role claim ->
  *   the session cookie being invisible to JavaScript -> upload -> checks ->
  *   findings with evidence -> approve over a blocking finding ->
  *   switch to Hindi from Settings -> reject in Hindi -> sign out.
@@ -50,6 +51,7 @@ console.log('    aria-invalid:', await p.locator('input[type=tel]').getAttribute
 step(2, 'a wrong password says what to do, with no status code or jargon');
 await p.fill('input[type=tel]', MOBILE);
 await p.fill('input[type=password]', 'definitely-wrong');
+await p.locator('.ux4g-radio', {hasText: 'Officer'}).first().click();
 await p.locator('button[type=submit]').click();
 const alertBox = p.locator('.ux4g-alert[role=alert]');
 await alertBox.waitFor({state: 'visible', timeout: 5000});
@@ -61,26 +63,54 @@ console.log('   ', JSON.stringify(alertText));
 console.log('    leaks a status code or jargon:',
   /40[0-9]|50[0-9]|exception|traceback|agent|LLM|token|prompt/i.test(alertText));
 
-step(3, 'sign in using only the keyboard');
-await p.fill('input[type=tel]', '');
-await p.fill('input[type=password]', '');
+step(3, 'sign in using only the keyboard — reveal, role and all');
+await p.reload({waitUntil: 'networkidle'});
 await p.locator('input[type=tel]').focus();
 await p.keyboard.type(MOBILE);
 await p.keyboard.press('Tab');
 await p.keyboard.type(PASSWORD);
+await p.keyboard.press('Tab');           // Show password
+await p.keyboard.press('Space');
+console.log('    space reveals the password:',
+  (await p.locator('input[name=password]').getAttribute('type')) === 'text');
+await p.keyboard.press('Space');         // and hides it again
+console.log('    space hides it again:',
+  (await p.locator('input[name=password]').getAttribute('type')) === 'password');
+await p.keyboard.press('Tab');           // the role group
+await p.keyboard.press('Space');
+console.log('    space picks a role:', await p.locator('input[value=officer]').isChecked());
 await p.keyboard.press('Tab');
 await p.keyboard.press('Enter');
 await p.waitForURL(/\/en$/, {timeout: 8000});
 console.log('    landed on', new URL(p.url()).pathname, '—',
   (await p.locator('main p').first().textContent()).trim());
 
-step(4, 'the session cookie is invisible to JavaScript');
+step(4, 'claiming a role you do not hold is refused, and signs nothing in');
+{
+  const other = await b.newContext({viewport: {width: 1366, height: 768}});
+  const q = await other.newPage();
+  await q.goto(`${BASE}/en/login`, {waitUntil: 'networkidle'});
+  await q.fill('input[type=tel]', MOBILE);
+  await q.fill('input[type=password]', PASSWORD);
+  await q.locator('.ux4g-radio', {hasText: 'Head of department'}).click();
+  await q.locator('button[type=submit]').click();
+  const refusal = q.locator('.ux4g-alert[role=alert]');
+  await refusal.waitFor({state: 'visible', timeout: 5000});
+  await q.waitForTimeout(250);
+  console.log('   ', JSON.stringify((await refusal.textContent()).trim()));
+  console.log('    still on the sign-in screen:', /login/.test(q.url()));
+  console.log('    session cookies set:',
+    (await other.cookies()).filter((c) => c.name.startsWith('sutradhar')).length);
+  await other.close();
+}
+
+step(5, 'the session cookie is invisible to JavaScript');
 console.log('    document.cookie sees:', JSON.stringify(await p.evaluate(() => document.cookie)));
 console.log('    actual:', (await ctx.cookies())
   .map((c) => `${c.name}(httpOnly=${c.httpOnly},sameSite=${c.sameSite})`).join(', '));
 
 // ------------------------------------------------- upload, review, approve --
-step(5, 'upload a certificate whose date of birth disagrees with the records');
+step(6, 'upload a certificate whose date of birth disagrees with the records');
 await p.setInputFiles('input[type=file]', `${SAMPLES}/birth-certificate-dob-mismatch.pdf`);
 await p.waitForFunction(
   () => document.body.innerText.includes('Waiting for your decision'),
@@ -89,7 +119,7 @@ console.log('    checks finished; the row now reads:',
   (await p.locator('table tbody tr td').nth(2).textContent()).trim());
 await p.screenshot({path: `${shots}/p2-home.png`, fullPage: true});
 
-step(6, 'the review screen leads with what needs attention');
+step(7, 'the review screen leads with what needs attention');
 await p.locator('table tbody tr a').first().click();
 await p.waitForURL(/\/review\/\d+$/, {timeout: 8000});
 await p.waitForSelector('text=/What was read from the document/', {timeout: 8000});
@@ -98,14 +128,14 @@ console.log('    first finding:',
   (await p.locator('ul li.ux4g-card .ux4g-heading-xxs-strong').first().textContent()).trim());
 await p.screenshot({path: `${shots}/p2-review.png`, fullPage: true});
 
-step(7, 'the evidence cites where the reference value came from');
+step(8, 'the evidence cites where the reference value came from');
 await p.locator('button', {hasText: 'View evidence'}).first().click();
 await p.waitForTimeout(300);
 (await p.locator('table').filter({hasText: 'On the document'}).first().innerText())
   .split('\n').forEach((l) => console.log('      ' + l));
 await p.screenshot({path: `${shots}/p2-evidence.png`, fullPage: true});
 
-step(8, 'a blocking finding cannot be approved without a written note');
+step(9, 'a blocking finding cannot be approved without a written note');
 const approve = p.locator('button', {hasText: /^Approve$/});
 await approve.click();
 await p.waitForTimeout(400);
@@ -122,7 +152,7 @@ console.log('    confirmation:');
 await p.screenshot({path: `${shots}/p2-confirmation.png`, fullPage: true});
 
 // ------------------------------------------------------ reject, in Hindi ---
-step(9, 'reject a document with no matching record, in Hindi');
+step(10, 'reject a document with no matching record, in Hindi');
 await p.locator('a', {hasText: 'Back to your desk'}).click();
 await p.waitForURL(/\/en$/, {timeout: 8000});
 await p.setInputFiles('input[type=file]', `${SAMPLES}/income-certificate-unknown.pdf`);
@@ -160,7 +190,7 @@ console.log('    confirmation:');
 await p.screenshot({path: `${shots}/p2-confirmation-hindi.png`, fullPage: true});
 
 // ------------------------------------------------------------- sign out ----
-step(10, 'sign out clears the session');
+step(11, 'sign out clears the session');
 await p.locator('a', {hasText: /अपने डेस्क पर लौटें/}).click();
 await p.waitForURL(/\/hi$/, {timeout: 8000});
 await p.getByRole('button', {name: /साइन आउट/}).click();

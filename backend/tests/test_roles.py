@@ -17,6 +17,7 @@ from app.db.app import AppSessionLocal
 from app.models.types import utcnow
 from app.models.user import User
 from app.services.security import create_token, decode_token
+from tests.conftest import DEPT_HEAD_MOBILE, OFFICER_MOBILE, PASSWORD
 
 
 def _user(role: str) -> User:
@@ -155,3 +156,138 @@ def test_reading_a_document_requires_a_session(anonymous, reviewed_document):
     assert anonymous.get(f"/api/documents/{reviewed_document}").status_code == 401
     assert anonymous.get(f"/api/documents/{reviewed_document}/file").status_code == 401
     assert anonymous.get(f"/api/documents/{reviewed_document}/events").status_code == 401
+
+
+# --------------------------------------------------------------------------
+# Saying which role you are signing in as
+# --------------------------------------------------------------------------
+#
+# The sign-in screen asks the officer to pick a role. That pick is a claim, not
+# a grant: it is compared with the role on the account and can only refuse a
+# sign-in. These tests are the ones that would fail if somebody ever made it
+# decide anything.
+
+
+def test_declaring_your_own_role_signs_you_in(anonymous):
+    response = anonymous.post(
+        "/api/auth/login",
+        json={
+            "mobile_number": OFFICER_MOBILE,
+            "password": PASSWORD,
+            "role": "officer",
+        },
+    )
+    assert response.status_code == 200
+    assert response.json()["role"] == "officer"
+
+
+def test_declaring_a_role_you_do_not_hold_is_refused(anonymous):
+    """The point of the whole feature: claiming a role does not confer it."""
+    response = anonymous.post(
+        "/api/auth/login",
+        json={
+            "mobile_number": OFFICER_MOBILE,
+            "password": PASSWORD,
+            "role": "dept_head",
+        },
+    )
+    assert response.status_code == 401
+    assert response.json()["detail"] == "role_mismatch"
+    # And nothing was signed in.
+    assert not [c for c in anonymous.cookies if c.startswith("sutradhar")]
+    assert anonymous.get("/api/auth/me").status_code == 401
+
+
+def test_a_head_declaring_officer_is_refused_too(anonymous):
+    """It narrows in both directions. A head is not an officer here — the field
+    says who you are, not which screen you would like."""
+    response = anonymous.post(
+        "/api/auth/login",
+        json={
+            "mobile_number": DEPT_HEAD_MOBILE,
+            "password": PASSWORD,
+            "role": "officer",
+        },
+    )
+    assert response.status_code == 401
+    assert response.json()["detail"] == "role_mismatch"
+
+
+def test_the_declared_role_never_reaches_the_token(anonymous):
+    """Even when it matches, the claim is not what is written down: the token's
+    role comes from the user's row, and the guards re-read that row anyway."""
+    import jwt
+
+    from app.config import get_settings
+
+    anonymous.post(
+        "/api/auth/login",
+        json={
+            "mobile_number": DEPT_HEAD_MOBILE,
+            "password": PASSWORD,
+            "role": "dept_head",
+        },
+    )
+    token = anonymous.cookies["sutradhar_access"]
+    claims = jwt.decode(token, get_settings().jwt_secret, algorithms=["HS256"])
+    assert claims["role"] == "dept_head"
+
+    with AppSessionLocal() as session:
+        stored = session.scalar(select(User).where(User.mobile_number == DEPT_HEAD_MOBILE))
+        assert claims["role"] == stored.role
+
+
+def test_a_wrong_password_never_reveals_the_role(anonymous):
+    """The role check sits below the password check on purpose.
+
+    Above it, this endpoint would answer "is this number a head of department?"
+    to anyone who asked. Both a matching and a mismatching claim must give the
+    same generic answer when the password is wrong.
+    """
+    matching = anonymous.post(
+        "/api/auth/login",
+        json={
+            "mobile_number": DEPT_HEAD_MOBILE,
+            "password": "not-the-password",
+            "role": "dept_head",
+        },
+    )
+    mismatching = anonymous.post(
+        "/api/auth/login",
+        json={
+            "mobile_number": DEPT_HEAD_MOBILE,
+            "password": "not-the-password",
+            "role": "officer",
+        },
+    )
+    assert matching.status_code == mismatching.status_code == 401
+    assert matching.json()["detail"] == mismatching.json()["detail"] == "invalid_credentials"
+
+
+def test_an_unknown_number_gives_nothing_away_either(anonymous):
+    response = anonymous.post(
+        "/api/auth/login",
+        json={"mobile_number": "9999999999", "password": PASSWORD, "role": "dept_head"},
+    )
+    assert response.status_code == 401
+    assert response.json()["detail"] == "invalid_credentials"
+
+
+def test_an_invented_role_is_rejected_before_anything_else(anonymous):
+    """Not a 401 with a hint — a schema rejection. The field is a closed set."""
+    response = anonymous.post(
+        "/api/auth/login",
+        json={"mobile_number": OFFICER_MOBILE, "password": PASSWORD, "role": "admin"},
+    )
+    assert response.status_code == 422
+
+
+def test_omitting_the_role_still_signs_you_in(anonymous):
+    """The field is optional, and leaving it out is not a way around anything:
+    the role still comes from the account either way."""
+    response = anonymous.post(
+        "/api/auth/login",
+        json={"mobile_number": OFFICER_MOBILE, "password": PASSWORD},
+    )
+    assert response.status_code == 200
+    assert response.json()["role"] == "officer"

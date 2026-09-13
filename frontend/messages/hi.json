@@ -24,10 +24,20 @@
       "passwordRequired": "अपना पासवर्ड दर्ज करें।",
       "invalid_credentials": "That mobile number and password do not match. Check both and try again.",
       "network": "Could not reach the system. Check your connection and try again.",
-      "unexpected": "Something went wrong at our end. Please try again in a moment."
+      "unexpected": "Something went wrong at our end. Please try again in a moment.",
+      "roleRequired": "चुनें कि आप अधिकारी के रूप में साइन इन कर रहे हैं या विभागाध्यक्ष के रूप में।",
+      "role_mismatch": "आपका मोबाइल नंबर और पासवर्ड सही हैं, परंतु यह खाता आपके चुने गए रूप में पंजीकृत नहीं है। दूसरा विकल्प चुनकर फिर साइन इन करें।"
     },
     "visualCaption": "तीन जाँचें एक ही समय पर अभिलेखों से मिलान करती हैं। उन्हें जो कुछ मिलता है वह एकत्र करके आपको सौंप दिया जाता है। जब तक आप निर्णय नहीं लेते, कुछ भी तय नहीं होता।",
-    "visualTitle": "जाँच प्रणाली करती है। निर्णय आप करते हैं।"
+    "visualTitle": "जाँच प्रणाली करती है। निर्णय आप करते हैं।",
+    "showPassword": "पासवर्ड दिखाएँ",
+    "showPasswordHint": "आपने जो लिखा है उसे पढ़ने के लिए इसे चुनें।",
+    "roleLabel": "किस रूप में साइन इन कर रहे हैं",
+    "roleHint": "इस कार्यालय में आप जिस रूप में पंजीकृत हैं, वह चुनें।",
+    "roles": {
+      "officer": "अधिकारी",
+      "dept_head": "विभागाध्यक्ष"
+    }
   },
   "home": {
     "title": "आपका डेस्क",

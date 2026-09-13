@@ -708,3 +708,69 @@ body {
     gap: var(--ux4g-gap-column-m);
   }
 }
+
+/* ---------------------------------------------------------------------------
+   Target size on Checkbox and Radio.
+
+   GAP: both components are a row about 20px tall — the control is
+   `--ux4g-size-20` and the label sits beside it — and the whole `<label>` is
+   what a finger hits. That is under WCAG 2.2's 24px floor and well under the
+   44px this service holds itself to, and UX4G ships no larger variant: even
+   `ux4g-checkbox-lg` only grows the box to 24px.
+
+   Padding on our own class, added alongside the component's, rather than a
+   descendant rule against `.ux4g-checkbox` or `.ux4g-radio` — §13 of the
+   contract forbids overriding a component's internals, and nothing here
+   restyles the control itself. It only makes the row that was already
+   clickable big enough to hit.
+
+   The negative inline margin keeps the control visually aligned with the
+   fields above it, so the padding buys a target without a ragged left edge.
+   --------------------------------------------------------------------------- */
+.sutradhar-tap-target {
+  min-height: var(--ux4g-size-48, 3rem);
+  align-items: center;
+  padding-block: var(--ux4g-padding-xs);
+  padding-inline: var(--ux4g-padding-xs);
+  margin-inline-start: calc(-1 * var(--ux4g-padding-xs));
+  border-radius: var(--ux4g-radius-md);
+}
+
+/* The keyboard focus ring belongs on the whole row, not on a visually hidden
+   input. UX4G puts no focus treatment on the label, because it does not know
+   the label is the target. */
+.sutradhar-tap-target:focus-within {
+  outline: var(--ux4g-border-width-md) solid var(--ux4g-text-brand-primary-default);
+  outline-offset: 0;
+}
+
+/* A fieldset with no border of its own: the legend is the heading and the
+   options below it are already grouped by their spacing. A browser's default
+   fieldset border and padding would draw a box around one question on a form
+   whose other fields have none. */
+.sutradhar-fieldset {
+  border: 0;
+  padding: 0;
+  margin: 0;
+  min-inline-size: 0;
+}
+
+.sutradhar-fieldset > legend {
+  padding: 0;
+}
+
+/* Two roles, side by side where there is room and stacked where there is not.
+   UX4G has no radio-group layout; this is spacing only. */
+.sutradhar-role-options {
+  display: flex;
+  flex-direction: column;
+  gap: var(--ux4g-gap-row-2xs);
+}
+
+@media (min-width: 480px) {
+  .sutradhar-role-options {
+    flex-direction: row;
+    flex-wrap: wrap;
+    gap: var(--ux4g-gap-column-l);
+  }
+}

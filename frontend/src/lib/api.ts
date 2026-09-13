@@ -60,10 +60,26 @@ async function request<T>(
   return {ok: true, data: (await response.json()) as T};
 }
 
-export function login(mobileNumber: string, password: string) {
+export type DeclaredRole = 'officer' | 'dept_head';
+
+/**
+ * Sign in.
+ *
+ * `role` is what the officer said they were on the sign-in screen. It grants
+ * nothing: the server compares it with the role on the account and refuses the
+ * sign-in if they disagree — it is never written to the session and never asked
+ * again. The role in force always comes from the database, re-read on every
+ * request. Sending a different value here cannot make the browser anything it
+ * was not already.
+ */
+export function login(
+  mobileNumber: string,
+  password: string,
+  role: DeclaredRole
+) {
   return request<CurrentUser>('/auth/login', {
     method: 'POST',
-    body: JSON.stringify({mobile_number: mobileNumber, password})
+    body: JSON.stringify({mobile_number: mobileNumber, password, role})
   });
 }
 

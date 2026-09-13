@@ -583,10 +583,85 @@ Upload's action row, whose button is left-aligned under a centred panel, and the
 UX4G flex utilities on the Breadcrumb's list, whose shipped rule sets
 `flex-wrap` and `gap` but never `display`, leaving the gap inert.
 
+Three defects in the shipped package were worked around rather than silently
+absorbed, and are listed here so they can be reported upstream:
+
+1. **The Radio's label text does not select it.** `ux4g.js` installs a
+   delegated click handler that calls `preventDefault()` on every click inside
+   `.ux4g-radio` that is not on `.ux4g-radio-input` or `.ux4g-radio-control`.
+   Clicking the word beside a radio therefore does nothing, which breaks the
+   oldest convention in forms and shrinks the real target to the 20px circle
+   whatever padding the row carries. The Checkbox has no equivalent handler and
+   behaves correctly. Worked around by setting the value from the row's own
+   click; a radio cannot be un-selected, so the duplicate event on the circle is
+   harmless.
+2. **A bare `.ux4g-icon-outlined` is invisible in the light theme.** A rule
+   intended for the topbar (`.ux4g-topbar__iconbtn .ux4g-icon-outlined`) carries
+   the bare class in its selector list and sets `color:
+   var(--ux4g-text-neutral-inverse)` — near-white on a white page. Icons are
+   only used here inside components that set their own icon colour.
+3. **`.ux4g-navbar-desktop` is `display: none !important` below 768px** with no
+   automatic mobile counterpart, so a navbar built from the documented classes
+   alone disappears entirely on a phone. See "Getting around", above.
+
 Sutradhar is a product built with UX4G, not a government portal. It does not
 carry a national emblem, a ministry masthead, or a "Government of India"
 attribution, because it is a demonstration system and claiming otherwise would
 be untrue.
+
+## The sign-in screen
+
+Two controls beyond the mobile number and password.
+
+### Showing the password
+
+A checkbox that says **Show password**, not an eye in the corner of the field.
+
+UX4G does ship the slot for an in-field button — `ux4g-input-actions` and
+`ux4g-input-action-btn` — but at `ux4g-input-lg` the shipped rule sizes that
+button 1.25rem square. Twenty pixels is under half the 44px this service holds
+itself to and below even WCAG 2.2's 24px floor, and the only way to grow it is
+to override a component internal, which §13 of the contract forbids.
+
+The checkbox is also the better control here. The brief says every state is
+labelled in words and never by an icon alone, and these officers have not used
+an app that taught them what a crossed-out eye means. It says what it does, says
+whether it is on, has a 48px target, and is announced correctly with no ARIA of
+our own. Only the input's `type` changes when it is ticked, so focus, the caret
+and any password manager see the same element throughout. Signing in unticks it,
+so a password is not left on screen for whoever sits down next.
+
+### Choosing a role
+
+The officer says whether they are signing in as an **officer** or a **head of
+department**, and the server refuses the sign-in if that disagrees with the
+account.
+
+**It is a declaration, not a request.** Picking "head of department" cannot make
+anyone one. The role in force is read from the `users` row at sign-in and
+re-read from the database on every subsequent request; the declared value is
+compared, never stored, never written into the token, and never consulted again.
+A field the client controls is not allowed to decide what the client may do, so
+the only thing this one can do is narrow — it can refuse a sign-in and nothing
+else.
+
+**Where the check sits is the whole of its safety.** It is below the password
+check in `app/api/auth.py`, not above it. Above it, `POST /api/auth/login` would
+answer "is this mobile number a head of department?" to anyone who asked, with
+no credential at all — a role oracle over every account in the service. Below
+it, the only people who can learn a role are the ones who have just proved they
+own the account. `tests/test_roles.py` pins all of this down: that a claim you
+do not hold is refused in both directions, that no cookie is set when it is,
+that the token's role still comes from the database when it matches, that a
+wrong password gives the identical generic answer whichever role was claimed,
+and that an invented role is rejected by the schema.
+
+Nothing is pre-selected. Two taps to sign in rather than one is the cost of the
+choice being a real one, and a default that quietly works for most people is how
+the head of department ends up seeing an error every morning.
+
+The field is optional on the API. Omitting it signs you in exactly as before,
+which is not a way around anything — the role comes from the account either way.
 
 ## Two dashboards, one address
 
