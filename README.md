@@ -253,6 +253,46 @@ development; it is switched off when `SUTRADHAR_ENVIRONMENT=production`.
 | `npm run smoke` | Happy path in a real browser (both servers must be running) |
 | `./.venv/bin/python -m pytest tests/` | The parallel-execution tests |
 
+### Deploying the backend on a host
+
+The backend is an ASGI application, so it is served by `uvicorn`, not by
+`gunicorn`'s WSGI worker — a host's default start command of the shape
+`gunicorn your_application.wsgi` will not run it.
+
+On Render (or any host with the same three fields), with **Root Directory** set
+to `backend`:
+
+| Field | Value |
+|---|---|
+| Build Command | `pip install -r requirements.txt` |
+| Start Command | `alembic upgrade head && python scripts/seed.py && uvicorn app.main:app --host 0.0.0.0 --port $PORT --workers 1` |
+
+`backend/requirements.txt` installs the project from `pyproject.toml`, so the
+dependency list is not duplicated. Migration and seeding both run at start
+rather than at build: both are idempotent, and a database created during a build
+would be thrown away by the next one.
+
+Set the environment variables from `.env.example` in the host's own settings —
+at minimum `SUTRADHAR_JWT_SECRET`, both seed passwords, and
+`SUTRADHAR_ENVIRONMENT=production`. There is no `.env` file in a deployment and
+none is needed.
+
+Two constraints are worth stating plainly rather than discovering:
+
+- **One worker, one instance.** Live progress is published in-process (see
+  `app/services/events.py`) and the database is a single SQLite file. A second
+  worker would see neither. Scaling out means a shared broker and Postgres,
+  which the code is already shaped for — see *The same guarantee on Postgres*.
+- **Disk is ephemeral unless you attach one.** Without a persistent disk the
+  database and every uploaded file are lost on each deploy and restart. Attach a
+  disk and point both paths at it, as absolute paths:
+  `SUTRADHAR_DB_PATH=/var/data/app.db` and
+  `SUTRADHAR_UPLOAD_DIR=/var/data/uploads`.
+
+If the frontend is deployed separately, keep its `/api` proxy pointed at the
+backend with `API_ORIGIN`. The browser must keep talking to one origin: the
+session cookie is `SameSite=Strict` and a cross-origin call would not send it.
+
 ---
 
 ## The guarantee: the system can read, it can never write

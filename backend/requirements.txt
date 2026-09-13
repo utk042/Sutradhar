@@ -1,0 +1,8 @@
+# The dependency list lives in pyproject.toml, which stays the single source of
+# truth. This file exists only so that `pip install -r requirements.txt` — the
+# default build command on most hosts — installs the backend without a second
+# copy of the list to drift out of sync.
+#
+# The "." is resolved against the directory the command runs in, which must be
+# backend/ (on Render: set Root Directory to backend).
+.
